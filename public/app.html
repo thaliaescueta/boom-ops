@@ -1,0 +1,844 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Boom Ops — CSM Report</title>
+<style>
+  :root {
+    --bg: #0f1117; --surface: #1a1d27; --surface2: #242836; --border: #2e3348;
+    --text: #e4e6f0; --text-dim: #8b8fa3;
+    --accent: #6366f1; --accent-light: #818cf8;
+    --green: #22c55e; --green-bg: rgba(34,197,94,0.12);
+    --yellow: #eab308; --yellow-bg: rgba(234,179,8,0.12);
+    --orange: #f97316; --orange-bg: rgba(249,115,22,0.12);
+    --red: #ef4444; --red-bg: rgba(239,68,68,0.12);
+    --blue: #3b82f6; --blue-bg: rgba(59,130,246,0.12);
+    --purple: #a855f7; --purple-bg: rgba(168,85,247,0.12);
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: var(--bg); color: var(--text); line-height: 1.5; min-height: 100vh; }
+
+  /* ── Top Nav ── */
+  .top-nav {
+    background: var(--surface); border-bottom: 1px solid var(--border);
+    padding: 0 24px; height: 52px; display: flex; align-items: center;
+    justify-content: space-between; position: sticky; top: 0; z-index: 100;
+  }
+  .nav-left { display: flex; align-items: center; gap: 10px; }
+  .nav-logo { width: 32px; height: 32px; background: linear-gradient(135deg, var(--accent), var(--purple)); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 14px; color: #fff; }
+  .nav-title { font-size: 15px; font-weight: 700; }
+  .nav-right { display: flex; align-items: center; gap: 10px; }
+  .role-badge { padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; }
+  .role-badge.admin { background: var(--purple-bg); color: var(--purple); }
+  .role-badge.viewer { background: var(--blue-bg); color: var(--blue); }
+  .nav-user { font-size: 13px; color: var(--text-dim); }
+  .logout-btn { padding: 5px 14px; border-radius: 6px; border: 1px solid var(--border); background: transparent; color: var(--text-dim); font-size: 12px; cursor: pointer; transition: all 0.2s; text-decoration: none; }
+  .logout-btn:hover { border-color: var(--red); color: var(--red); }
+  .refresh-btn { padding: 5px 14px; border-radius: 6px; border: 1px solid var(--border); background: transparent; color: var(--text-dim); font-size: 12px; cursor: pointer; transition: all 0.2s; }
+  .refresh-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+  .container { max-width: 1600px; margin: 0 auto; padding: 24px; }
+
+  /* ── Header ── */
+  .header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 32px; flex-wrap: wrap; gap: 16px; }
+  .header-left { display: flex; align-items: center; gap: 16px; }
+  .logo { width: 48px; height: 48px; background: linear-gradient(135deg, var(--accent), var(--purple)); border-radius: 12px; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 20px; color: #fff; }
+  .header h1 { font-size: 24px; font-weight: 700; }
+  .header .subtitle { color: var(--text-dim); font-size: 14px; }
+  .date-badge { background: var(--surface2); border: 1px solid var(--border); padding: 8px 16px; border-radius: 8px; font-size: 13px; color: var(--text-dim); }
+
+  /* ── Summary Cards ── */
+  .summary-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 32px; }
+  .summary-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 20px; position: relative; overflow: hidden; }
+  .summary-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; }
+  .summary-card.total::before { background: var(--accent); }
+  .summary-card.active::before { background: var(--green); }
+  .summary-card.onboarding::before { background: var(--blue); }
+  .summary-card.danger::before { background: var(--red); }
+  .summary-card.churned::before { background: var(--orange); }
+  .summary-card.upsell::before { background: var(--purple); }
+  .summary-card .label { font-size: 12px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; }
+  .summary-card .value { font-size: 32px; font-weight: 800; }
+  .summary-card .change { font-size: 12px; margin-top: 4px; }
+  .summary-card .change.up { color: var(--green); }
+  .summary-card .change.down { color: var(--red); }
+
+  /* ── Tabs ── */
+  .tabs { display: flex; gap: 4px; margin-bottom: 24px; background: var(--surface); border-radius: 10px; padding: 4px; border: 1px solid var(--border); width: fit-content; }
+  .tab { padding: 8px 20px; border-radius: 8px; cursor: pointer; font-size: 13px; font-weight: 500; color: var(--text-dim); transition: all 0.2s; border: none; background: none; }
+  .tab:hover { color: var(--text); }
+  .tab.active { background: var(--accent); color: #fff; }
+  .tab-content { display: none; }
+  .tab-content.active { display: block; }
+
+  /* ── Filters ── */
+  .filters { display: flex; gap: 12px; margin-bottom: 20px; flex-wrap: wrap; align-items: center; }
+  .filter-input { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 8px 14px; color: var(--text); font-size: 13px; outline: none; min-width: 180px; }
+  .filter-input:focus { border-color: var(--accent); }
+  .filter-select { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 8px 14px; color: var(--text); font-size: 13px; outline: none; cursor: pointer; }
+  .add-btn { margin-left: auto; padding: 8px 16px; background: var(--accent); color: #fff; border: none; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; transition: background 0.2s; }
+  .add-btn:hover { background: #4f46e5; }
+
+  /* ── Table ── */
+  .table-wrapper { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th { text-align: left; padding: 12px 16px; font-weight: 600; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-dim); background: var(--surface2); border-bottom: 1px solid var(--border); white-space: nowrap; cursor: pointer; user-select: none; }
+  th:hover { color: var(--text); }
+  td { padding: 12px 16px; border-bottom: 1px solid var(--border); white-space: nowrap; vertical-align: middle; }
+  tr:hover td { background: rgba(99,102,241,0.04); }
+  tr:last-child td { border-bottom: none; }
+
+  /* ── Badges ── */
+  .badge { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 6px; font-size: 12px; font-weight: 600; }
+  .badge.live { background: var(--green-bg); color: var(--green); }
+  .badge.onboarding { background: var(--blue-bg); color: var(--blue); }
+  .badge.migration { background: var(--purple-bg); color: var(--purple); }
+  .badge.churned { background: var(--orange-bg); color: var(--orange); }
+  .badge.not-relevant { background: var(--surface2); color: var(--text-dim); }
+  .badge.none { background: var(--surface2); color: var(--text-dim); }
+
+  /* ── Health ── */
+  .health-bar { width: 80px; height: 8px; background: var(--surface2); border-radius: 4px; overflow: hidden; }
+  .health-fill { height: 100%; border-radius: 4px; transition: width 0.3s; }
+  .health-fill.excellent { background: var(--green); }
+  .health-fill.good { background: var(--blue); }
+  .health-fill.warning { background: var(--yellow); }
+  .health-fill.danger { background: var(--red); }
+  .mood { font-size: 18px; }
+  .risk-badge { padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 700; }
+  .risk-badge.low { background: var(--green-bg); color: var(--green); }
+  .risk-badge.medium { background: var(--yellow-bg); color: var(--yellow); }
+  .risk-badge.high { background: var(--orange-bg); color: var(--orange); }
+  .risk-badge.critical { background: var(--red-bg); color: var(--red); }
+  .feature-dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
+  .feature-dot.on { background: var(--green); }
+  .feature-dot.off { background: var(--surface2); border: 1px solid var(--border); }
+  .action-tags { display: flex; gap: 4px; flex-wrap: wrap; }
+  .action-tag { padding: 2px 8px; border-radius: 4px; font-size: 10px; font-weight: 600; background: var(--accent); color: #fff; opacity: 0.85; }
+
+  /* ── Admin Row Buttons ── */
+  .row-actions { display: flex; gap: 6px; }
+  .edit-btn, .del-btn { padding: 4px 10px; border-radius: 6px; font-size: 11px; font-weight: 600; cursor: pointer; border: 1px solid var(--border); transition: all 0.2s; }
+  .edit-btn { background: var(--surface2); color: var(--text-dim); }
+  .edit-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .del-btn { background: transparent; color: var(--text-dim); }
+  .del-btn:hover { border-color: var(--red); color: var(--red); }
+
+  /* ── Sections ── */
+  .danger-section { background: var(--surface); border: 1px solid var(--red); border-radius: 12px; padding: 24px; margin-bottom: 24px; }
+  .danger-section h3 { color: var(--red); margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
+  .upsell-section { background: var(--surface); border: 1px solid var(--purple); border-radius: 12px; padding: 24px; margin-bottom: 24px; }
+  .upsell-section h3 { color: var(--purple); margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
+  .section-desc { color: var(--text-dim); font-size: 13px; margin-bottom: 16px; }
+
+  /* ── Charts ── */
+  .chart-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 16px; margin-bottom: 24px; }
+  .chart-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 20px; }
+  .chart-card h4 { margin-bottom: 16px; font-size: 14px; }
+  .bar-chart { display: flex; align-items: flex-end; gap: 8px; height: 120px; padding-top: 8px; }
+  .bar-item { display: flex; flex-direction: column; align-items: center; gap: 4px; flex: 1; }
+  .bar { width: 100%; border-radius: 4px 4px 0 0; min-height: 4px; transition: height 0.3s; }
+  .bar-label { font-size: 10px; color: var(--text-dim); }
+  .bar-value { font-size: 11px; font-weight: 600; }
+
+  /* ── Footer ── */
+  .footer { margin-top: 40px; padding: 20px 0; border-top: 1px solid var(--border); display: flex; justify-content: space-between; color: var(--text-dim); font-size: 12px; }
+
+  /* ── Modal ── */
+  .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 200; align-items: center; justify-content: center; padding: 20px; }
+  .modal-overlay.open { display: flex; }
+  .modal { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; width: 100%; max-width: 640px; max-height: 90vh; overflow-y: auto; }
+  .modal-header { padding: 20px 24px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; background: var(--surface); z-index: 1; }
+  .modal-header h2 { font-size: 16px; font-weight: 700; }
+  .modal-close { background: none; border: none; color: var(--text-dim); font-size: 20px; cursor: pointer; padding: 4px 8px; border-radius: 6px; }
+  .modal-close:hover { background: var(--surface2); color: var(--text); }
+  .modal-body { padding: 24px; }
+  .modal-footer { padding: 16px 24px; border-top: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+  .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+  .form-row.full { grid-template-columns: 1fr; }
+  .form-field label { display: block; font-size: 12px; font-weight: 600; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.4px; margin-bottom: 6px; }
+  .form-field input[type="text"], .form-field input[type="number"], .form-field select, .form-field textarea {
+    width: 100%; background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 9px 12px; color: var(--text); font-size: 13px; outline: none; transition: border-color 0.2s; font-family: inherit;
+  }
+  .form-field input:focus, .form-field select:focus, .form-field textarea:focus { border-color: var(--accent); }
+  .form-field textarea { resize: vertical; min-height: 70px; }
+  .features-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 8px; margin-top: 6px; }
+  .feature-check { display: flex; align-items: center; gap: 8px; padding: 7px 10px; border-radius: 8px; border: 1px solid var(--border); background: var(--surface2); cursor: pointer; transition: border-color 0.2s; }
+  .feature-check:hover { border-color: var(--accent); }
+  .feature-check input[type="checkbox"] { accent-color: var(--accent); width: 14px; height: 14px; cursor: pointer; }
+  .feature-check span { font-size: 12px; font-weight: 500; }
+  .save-btn { flex: 1; padding: 10px; background: var(--accent); color: #fff; border: none; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; transition: background 0.2s; }
+  .save-btn:hover { background: #4f46e5; }
+  .cancel-btn { padding: 10px 20px; background: transparent; border: 1px solid var(--border); color: var(--text-dim); border-radius: 8px; font-size: 14px; cursor: pointer; transition: all 0.2s; }
+  .cancel-btn:hover { border-color: var(--text-dim); color: var(--text); }
+  .delete-client-btn { padding: 10px 20px; background: transparent; border: 1px solid var(--red); color: var(--red); border-radius: 8px; font-size: 14px; cursor: pointer; transition: all 0.2s; }
+  .delete-client-btn:hover { background: var(--red-bg); }
+
+  /* ── Toast ── */
+  .toast { position: fixed; bottom: 24px; right: 24px; padding: 12px 20px; border-radius: 10px; font-size: 13px; font-weight: 600; z-index: 999; transform: translateY(100px); opacity: 0; transition: all 0.3s; pointer-events: none; }
+  .toast.show { transform: translateY(0); opacity: 1; }
+  .toast.success { background: var(--green-bg); border: 1px solid var(--green); color: var(--green); }
+  .toast.error { background: var(--red-bg); border: 1px solid var(--red); color: var(--red); }
+
+  @media (max-width: 768px) {
+    .container { padding: 16px; }
+    .summary-grid { grid-template-columns: repeat(2, 1fr); }
+    .header { flex-direction: column; align-items: flex-start; }
+    .form-row { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<!-- Top Nav -->
+<div class="top-nav">
+  <div class="nav-left">
+    <div class="nav-logo">B</div>
+    <span class="nav-title">Boom Ops</span>
+  </div>
+  <div class="nav-right">
+    <button class="refresh-btn" onclick="loadData()">⟳ Refresh</button>
+    <span class="nav-user" id="navUser"></span>
+    <span class="role-badge" id="navRole"></span>
+    <a href="/logout" class="logout-btn">Sign out</a>
+  </div>
+</div>
+
+<div class="container">
+  <!-- Header -->
+  <div class="header">
+    <div class="header-left">
+      <div class="logo">B</div>
+      <div>
+        <h1>CSM Client Portfolio Report</h1>
+        <div class="subtitle">Boom PMS — Customer Success Overview</div>
+      </div>
+    </div>
+    <div class="date-badge" id="reportDate"></div>
+  </div>
+
+  <!-- Summary Cards -->
+  <div class="summary-grid" id="summaryCards"></div>
+
+  <!-- Tabs -->
+  <div class="tabs">
+    <button class="tab active" data-tab="overview">Overview</button>
+    <button class="tab" data-tab="danger">Danger Zone</button>
+    <button class="tab" data-tab="upsells">Upsell Opportunities</button>
+    <button class="tab" data-tab="details">Detailed View</button>
+  </div>
+
+  <!-- Overview Tab -->
+  <div class="tab-content active" id="tab-overview">
+    <div class="chart-grid" id="chartGrid"></div>
+    <div class="filters">
+      <input type="text" class="filter-input" id="searchFilter" placeholder="Search by client name…">
+      <select class="filter-select" id="statusFilter">
+        <option value="">All Statuses</option>
+        <option value="live">Live</option>
+        <option value="onboarding">Onboarding</option>
+        <option value="migration">Migration</option>
+        <option value="churned">Churned</option>
+        <option value="not relevant">Not Relevant</option>
+      </select>
+      <select class="filter-select" id="riskFilter">
+        <option value="">All Risk Levels</option>
+        <option value="0">No Risk (0)</option>
+        <option value="1">Low Risk (1)</option>
+        <option value="2">Medium Risk (2)</option>
+        <option value="3">High Risk (3)</option>
+      </select>
+      <select class="filter-select" id="productFilter">
+        <option value="">All Products</option>
+        <option value="boom-host">Boom Host</option>
+        <option value="boom-pro">Boom Pro</option>
+        <option value="boom-bam">Boom BAM</option>
+      </select>
+      <span id="filterCount" style="color:var(--text-dim);font-size:12px;"></span>
+      <button class="add-btn" id="addClientBtn" style="display:none" onclick="openAddModal()">+ Add Client</button>
+    </div>
+    <div class="table-wrapper">
+      <table id="clientTable">
+        <thead>
+          <tr>
+            <th data-sort="name">Client</th>
+            <th data-sort="status">Status</th>
+            <th data-sort="product_type">Product</th>
+            <th data-sort="health">Health Score</th>
+            <th data-sort="mood">Mood</th>
+            <th data-sort="risk">Risk</th>
+            <th>Features</th>
+            <th data-sort="listings">Listings</th>
+            <th>Main Risk</th>
+            <th>Suggested Actions</th>
+            <th id="actionsHeader" style="display:none">Manage</th>
+          </tr>
+        </thead>
+        <tbody id="clientTableBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Danger Zone Tab -->
+  <div class="tab-content" id="tab-danger">
+    <div class="danger-section">
+      <h3>⚠ Clients in Danger Zone</h3>
+      <p class="section-desc">Clients with high risk factors, low mood scores, or declining engagement that need immediate attention.</p>
+      <div class="table-wrapper">
+        <table>
+          <thead><tr><th>Client</th><th>Status</th><th>Risk</th><th>Mood</th><th>Health Score</th><th>Warning Signs</th><th>Recommended Actions</th></tr></thead>
+          <tbody id="dangerTableBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Upsell Tab -->
+  <div class="tab-content" id="tab-upsells">
+    <div class="upsell-section">
+      <h3>📈 Upsell Opportunities</h3>
+      <p class="section-desc">Active clients with good health scores who are not using key features — potential upsell targets.</p>
+      <div class="table-wrapper">
+        <table>
+          <thead><tr><th>Client</th><th>Product</th><th>Health</th><th>Features Using</th><th>Missing Features</th><th>Upsell Potential</th><th>Suggested Approach</th></tr></thead>
+          <tbody id="upsellTableBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Detailed View Tab -->
+  <div class="tab-content" id="tab-details">
+    <div class="table-wrapper">
+      <table>
+        <thead>
+          <tr>
+            <th>ID</th><th>Client</th><th>Status</th><th>Product</th>
+            <th>AI CS</th><th>AI Sales</th><th>CRM</th><th>Tasks</th>
+            <th>Auto Msgs</th><th>Auto Tasks</th><th>Website</th><th>Direct Book</th>
+            <th>Store</th><th>Guest Exp</th><th>Reviews</th><th>IoT</th><th>Damage W.</th>
+          </tr>
+        </thead>
+        <tbody id="detailsTableBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="footer">
+    <span>Boom Ops — CSM Report Portal</span>
+    <span id="footerDate"></span>
+  </div>
+</div>
+
+<!-- Edit / Add Modal -->
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal">
+    <div class="modal-header">
+      <h2 id="modalTitle">Edit Client</h2>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="editId">
+      <div class="form-row">
+        <div class="form-field">
+          <label>Client Name</label>
+          <input type="text" id="editName" placeholder="Company name">
+        </div>
+        <div class="form-field">
+          <label>Status</label>
+          <select id="editStatus">
+            <option value="live">Live</option>
+            <option value="onboarding">Onboarding</option>
+            <option value="migration">Migration</option>
+            <option value="churned">Churned</option>
+            <option value="not relevant">Not Relevant</option>
+            <option value="none">None</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-field">
+          <label>Product Type</label>
+          <select id="editProduct">
+            <option value="">— None —</option>
+            <option value="boom-host">Boom Host</option>
+            <option value="boom-pro">Boom Pro</option>
+            <option value="boom-bam">Boom BAM</option>
+          </select>
+        </div>
+        <div class="form-field">
+          <label>Listings</label>
+          <input type="number" id="editListings" min="0" placeholder="0">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-field">
+          <label>Client Mood</label>
+          <select id="editMood">
+            <option value="3">😊 Happy (3)</option>
+            <option value="2">😐 Neutral (2)</option>
+            <option value="1">😟 Unhappy (1)</option>
+            <option value="0">🔴 Critical (0)</option>
+          </select>
+        </div>
+        <div class="form-field">
+          <label>Risk Factor</label>
+          <select id="editRisk">
+            <option value="0">None (0)</option>
+            <option value="1">Low (1)</option>
+            <option value="2">Medium (2)</option>
+            <option value="3">High (3)</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row full">
+        <div class="form-field">
+          <label>Features Active</label>
+          <div class="features-grid" id="featuresGrid"></div>
+        </div>
+      </div>
+      <div class="form-row full">
+        <div class="form-field">
+          <label>Notes</label>
+          <textarea id="editNotes" placeholder="Internal notes about this client…"></textarea>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="delete-client-btn" id="deleteClientBtn" onclick="deleteClient()">Delete Client</button>
+      <div style="display:flex;gap:10px">
+        <button class="cancel-btn" onclick="closeModal()">Cancel</button>
+        <button class="save-btn" onclick="saveClient()">Save Changes</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ─── State ────────────────────────────────────────────────────────────────────
+let allClients = []
+let currentUser = null
+let sortCol = 'name'
+let sortDir = 'asc'
+let editingId = null
+
+const ALL_FEATURES = ['ai_cs','ai_sales','crm','tasks','auto_msgs','auto_tasks','website','direct_book','store','guest_exp','reviews','iot','damage_waiver']
+const FEATURE_LABELS = { ai_cs:'AI CS', ai_sales:'AI Sales', crm:'CRM', tasks:'Tasks', auto_msgs:'Auto Msgs', auto_tasks:'Auto Tasks', website:'Website', direct_book:'Direct Book', store:'Store', guest_exp:'Guest Exp', reviews:'Reviews', iot:'IoT', damage_waiver:'Damage W.' }
+const MOOD_EMOJI = ['🔴','🟠','🟡','🟢']
+const MOOD_TEXT = ['Critical','Unhappy','Neutral','Happy']
+const RISK_LABELS = ['None','Low','Medium','High']
+const RISK_CLASSES = ['low','low','medium','critical']
+
+// ─── Init ─────────────────────────────────────────────────────────────────────
+async function init() {
+  try {
+    const me = await fetch('/api/me').then(r => r.json())
+    if (me.error) { window.location.href = '/login'; return }
+    currentUser = me
+    document.getElementById('navUser').textContent = me.username
+    const roleEl = document.getElementById('navRole')
+    roleEl.textContent = me.role === 'admin' ? 'Controller' : 'Viewer'
+    roleEl.className = 'role-badge ' + me.role
+    if (me.role === 'admin') {
+      document.getElementById('addClientBtn').style.display = 'block'
+      document.getElementById('actionsHeader').style.display = ''
+    }
+    await loadData()
+  } catch {
+    window.location.href = '/login'
+  }
+}
+
+async function loadData() {
+  try {
+    const data = await fetch('/api/clients').then(r => r.json())
+    allClients = data
+    renderAll()
+  } catch {
+    showToast('Failed to load data', 'error')
+  }
+}
+
+// ─── Calculations ─────────────────────────────────────────────────────────────
+function countFeatures(f) { return ALL_FEATURES.filter(k => f[k]).length }
+
+function calcHealth(c) {
+  let s = 0
+  s += (c.mood / 3) * 25
+  s += ((3 - c.risk_factor) / 3) * 25
+  s += (countFeatures(c.features) / ALL_FEATURES.length) * 30
+  s += c.listings > 0 ? Math.min(20, (c.listings / 30) * 20) : 0
+  return Math.round(s)
+}
+
+function healthClass(h) {
+  if (h >= 75) return 'excellent'
+  if (h >= 50) return 'good'
+  if (h >= 30) return 'warning'
+  return 'danger'
+}
+
+function healthColor(hc) {
+  return hc === 'excellent' ? 'var(--green)' : hc === 'good' ? 'var(--blue)' : hc === 'warning' ? 'var(--yellow)' : 'var(--red)'
+}
+
+function getMainRisk(c) {
+  if (c.status === 'churned') return 'Already churned'
+  if (c.risk_factor >= 3) return 'High churn risk'
+  if (c.mood <= 1) return 'Client unhappy'
+  if (c.risk_factor >= 2) return 'Declining engagement'
+  if (countFeatures(c.features) <= 2 && c.status === 'live') return 'Low feature adoption'
+  if (c.mood <= 2 && c.risk_factor >= 1) return 'Needs attention'
+  if (c.listings === 0 && c.status === 'live') return 'No active listings'
+  return 'None'
+}
+
+function getSuggestedActions(c) {
+  const a = []
+  if (c.risk_factor >= 2) a.push('Schedule check-in call')
+  if (c.mood <= 1) a.push('Escalate to management')
+  if (c.mood <= 2 && c.mood > 1) a.push('Send satisfaction survey')
+  if (countFeatures(c.features) <= 3 && c.status === 'live') a.push('Feature training session')
+  if (!c.features.ai_cs && !c.features.ai_sales && c.status === 'live') a.push('AI demo')
+  if (!c.features.website && c.status === 'live' && c.listings >= 10) a.push('Website pitch')
+  if (!c.features.direct_book && c.features.website) a.push('Enable direct bookings')
+  if (c.status === 'onboarding') a.push('Follow up onboarding')
+  if (c.status === 'migration') a.push('Check migration progress')
+  if (c.status === 'churned') a.push('Win-back campaign')
+  return a.slice(0, 3)
+}
+
+function getMissingFeatures(c) { return ALL_FEATURES.filter(k => !c.features[k]).map(k => FEATURE_LABELS[k]) }
+
+function getUpsellPotential(c) {
+  const m = getMissingFeatures(c).length
+  return m >= 8 ? 'High' : m >= 4 ? 'Medium' : 'Low'
+}
+
+function getUpsellApproach(c) {
+  const m = ALL_FEATURES.filter(k => !c.features[k])
+  if (m.includes('ai_cs') || m.includes('ai_sales')) return 'Demo AI agents for automated guest communication'
+  if (m.includes('website') || m.includes('direct_book')) return 'Show direct booking ROI calculator'
+  if (m.includes('store')) return 'Present guest upsell store case study'
+  if (m.includes('damage_waiver')) return 'Pitch damage protection revenue opportunity'
+  if (m.includes('iot')) return 'Present smart lock & IoT integration benefits'
+  return 'Schedule feature review meeting'
+}
+
+// ─── Render ───────────────────────────────────────────────────────────────────
+function renderAll() {
+  const now = new Date()
+  document.getElementById('reportDate').textContent = now.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })
+  document.getElementById('footerDate').textContent = `Generated: ${now.toLocaleString()}`
+  renderSummary()
+  renderCharts()
+  renderMainTable(getFiltered())
+  renderDangerTable()
+  renderUpsellTable()
+  renderDetailsTable()
+}
+
+function renderSummary() {
+  const c = allClients
+  const total = c.length
+  const live = c.filter(x => x.status === 'live').length
+  const pipeline = c.filter(x => x.status === 'onboarding' || x.status === 'migration').length
+  const danger = c.filter(x => (x.risk_factor >= 2 || x.mood <= 1) && x.status !== 'churned').length
+  const churned = c.filter(x => x.status === 'churned').length
+  const upsell = c.filter(x => x.status === 'live' && calcHealth(x) >= 50 && countFeatures(x.features) < 10).length
+  document.getElementById('summaryCards').innerHTML = `
+    <div class="summary-card total"><div class="label">Total Clients</div><div class="value">${total}</div><div class="change" style="color:var(--text-dim)">All accounts</div></div>
+    <div class="summary-card active"><div class="label">Active / Live</div><div class="value">${live}</div><div class="change up">${Math.round(live/total*100)}% of portfolio</div></div>
+    <div class="summary-card onboarding"><div class="label">Onboarding / Migration</div><div class="value">${pipeline}</div><div class="change" style="color:var(--blue)">Pipeline clients</div></div>
+    <div class="summary-card danger"><div class="label">Danger Zone</div><div class="value">${danger}</div><div class="change down">Needs immediate attention</div></div>
+    <div class="summary-card churned"><div class="label">Churned</div><div class="value">${churned}</div><div class="change down">${Math.round(churned/total*100)}% churn rate</div></div>
+    <div class="summary-card upsell"><div class="label">Upsell Opportunities</div><div class="value">${upsell}</div><div class="change" style="color:var(--purple)">Ready for expansion</div></div>`
+}
+
+function renderCharts() {
+  const c = allClients
+  const statuses = ['live','onboarding','migration','churned','not relevant']
+  const statusColors = { live:'var(--green)', onboarding:'var(--blue)', migration:'var(--purple)', churned:'var(--orange)', 'not relevant':'var(--text-dim)' }
+  const sCounts = statuses.map(s => c.filter(x => x.status === s).length)
+  const maxS = Math.max(...sCounts, 1)
+
+  const products = ['boom-host','boom-pro','boom-bam']
+  const pLabels = ['Host','Pro','BAM']
+  const pColors = ['var(--blue)','var(--purple)','var(--accent)']
+  const pCounts = products.map(p => c.filter(x => x.product_type === p).length)
+  const maxP = Math.max(...pCounts, 1)
+
+  const rCounts = [0,1,2,3].map(r => c.filter(x => x.risk_factor === r && x.status !== 'churned' && x.status !== 'not relevant').length)
+  const maxR = Math.max(...rCounts, 1)
+  const rColors = ['var(--green)','var(--yellow)','var(--orange)','var(--red)']
+
+  const hBuckets = [{l:'Excellent',min:75,max:101,c:'var(--green)'},{l:'Good',min:50,max:75,c:'var(--blue)'},{l:'Warning',min:30,max:50,c:'var(--yellow)'},{l:'Danger',min:0,max:30,c:'var(--red)'}]
+  const hCounts = hBuckets.map(b => c.filter(x => { const h = calcHealth(x); return h >= b.min && h < b.max }).length)
+  const maxH = Math.max(...hCounts, 1)
+
+  document.getElementById('chartGrid').innerHTML = `
+    <div class="chart-card"><h4>Client Status Distribution</h4><div class="bar-chart">${statuses.map((s,i) => `<div class="bar-item"><div class="bar-value">${sCounts[i]}</div><div class="bar" style="height:${(sCounts[i]/maxS)*100}px;background:${statusColors[s]}"></div><div class="bar-label">${s.charAt(0).toUpperCase()+s.slice(1)}</div></div>`).join('')}</div></div>
+    <div class="chart-card"><h4>Product Distribution</h4><div class="bar-chart">${products.map((p,i) => `<div class="bar-item"><div class="bar-value">${pCounts[i]}</div><div class="bar" style="height:${(pCounts[i]/maxP)*100}px;background:${pColors[i]}"></div><div class="bar-label">${pLabels[i]}</div></div>`).join('')}</div></div>
+    <div class="chart-card"><h4>Risk Factor Distribution</h4><div class="bar-chart">${[0,1,2,3].map((r,i) => `<div class="bar-item"><div class="bar-value">${rCounts[i]}</div><div class="bar" style="height:${(rCounts[i]/maxR)*100}px;background:${rColors[i]}"></div><div class="bar-label">${RISK_LABELS[r]}</div></div>`).join('')}</div></div>
+    <div class="chart-card"><h4>Health Score Overview</h4><div class="bar-chart">${hBuckets.map((b,i) => `<div class="bar-item"><div class="bar-value">${hCounts[i]}</div><div class="bar" style="height:${(hCounts[i]/maxH)*100}px;background:${b.c}"></div><div class="bar-label">${b.l}</div></div>`).join('')}</div></div>`
+}
+
+function renderMainTable(filtered) {
+  const isAdmin = currentUser && currentUser.role === 'admin'
+  document.getElementById('clientTableBody').innerHTML = filtered.map(c => {
+    const h = calcHealth(c), hc = healthClass(h)
+    const risk = getMainRisk(c)
+    const actions = getSuggestedActions(c)
+    const statusCls = c.status === 'not relevant' ? 'not-relevant' : c.status
+    const adminCols = isAdmin ? `<td><div class="row-actions"><button class="edit-btn" onclick="openEditModal(${c.id})">✏ Edit</button><button class="del-btn" onclick="quickDelete(${c.id})">✕</button></div></td>` : ''
+    return `<tr>
+      <td><strong>${c.name}</strong><br><span style="color:var(--text-dim);font-size:11px">ID: ${c.id}</span></td>
+      <td><span class="badge ${statusCls}">${c.status || 'none'}</span></td>
+      <td><span style="color:var(--text-dim);font-size:12px">${c.product_type || '—'}</span></td>
+      <td><div style="display:flex;align-items:center;gap:8px"><span style="font-weight:700;font-size:14px;color:${healthColor(hc)}">${h}</span><div class="health-bar"><div class="health-fill ${hc}" style="width:${h}%"></div></div></div></td>
+      <td><span class="mood">${MOOD_EMOJI[c.mood]}</span> <span style="font-size:11px;color:var(--text-dim)">${MOOD_TEXT[c.mood]}</span></td>
+      <td><span class="risk-badge ${RISK_CLASSES[c.risk_factor]}">${RISK_LABELS[c.risk_factor]}</span></td>
+      <td><span style="font-weight:600">${countFeatures(c.features)}</span><span style="color:var(--text-dim)">/${ALL_FEATURES.length}</span></td>
+      <td>${c.listings}</td>
+      <td style="color:${risk === 'None' ? 'var(--text-dim)' : 'var(--orange)'};font-size:12px">${risk}</td>
+      <td><div class="action-tags">${actions.map(a => `<span class="action-tag">${a}</span>`).join('')}</div></td>
+      ${adminCols}
+    </tr>`
+  }).join('')
+  document.getElementById('filterCount').textContent = `Showing ${filtered.length} of ${allClients.length} clients`
+}
+
+function renderDangerTable() {
+  const dc = allClients.filter(c => (c.risk_factor >= 2 || c.mood <= 1 || (c.status === 'live' && countFeatures(c.features) <= 2)) && c.status !== 'churned' && c.status !== 'not relevant').sort((a,b) => b.risk_factor - a.risk_factor || a.mood - b.mood)
+  document.getElementById('dangerTableBody').innerHTML = dc.length ? dc.map(c => {
+    const h = calcHealth(c), hc = healthClass(h)
+    const warnings = []
+    if (c.risk_factor >= 2) warnings.push('High risk factor')
+    if (c.mood <= 1) warnings.push('Client unhappy')
+    if (countFeatures(c.features) <= 2) warnings.push('Minimal feature usage')
+    if (c.listings <= 3 && c.status === 'live') warnings.push('Very few listings')
+    return `<tr>
+      <td><strong>${c.name}</strong></td>
+      <td><span class="badge ${c.status}">${c.status}</span></td>
+      <td><span class="risk-badge ${RISK_CLASSES[c.risk_factor]}" style="font-size:13px;padding:4px 12px">${c.risk_factor}/3</span></td>
+      <td><span class="mood">${MOOD_EMOJI[c.mood]}</span> ${MOOD_TEXT[c.mood]}</td>
+      <td><div style="display:flex;align-items:center;gap:8px"><span style="font-weight:700;color:${healthColor(hc)}">${h}</span><div class="health-bar"><div class="health-fill ${hc}" style="width:${h}%"></div></div></div></td>
+      <td style="font-size:12px;color:var(--orange)">${warnings.join(', ')}</td>
+      <td><div class="action-tags">${getSuggestedActions(c).map(a => `<span class="action-tag">${a}</span>`).join('')}</div></td>
+    </tr>`
+  }).join('') : '<tr><td colspan="7" style="text-align:center;color:var(--text-dim);padding:40px">No clients in danger zone</td></tr>'
+}
+
+function renderUpsellTable() {
+  const uc = allClients.filter(c => c.status === 'live' && calcHealth(c) >= 40 && countFeatures(c.features) < 11).sort((a,b) => getMissingFeatures(b).length - getMissingFeatures(a).length)
+  document.getElementById('upsellTableBody').innerHTML = uc.map(c => {
+    const missing = getMissingFeatures(c)
+    const pot = getUpsellPotential(c)
+    const potColor = pot === 'High' ? 'var(--green)' : pot === 'Medium' ? 'var(--yellow)' : 'var(--text-dim)'
+    return `<tr>
+      <td><strong>${c.name}</strong></td>
+      <td>${c.product_type || '—'}</td>
+      <td><span style="font-weight:700">${calcHealth(c)}</span></td>
+      <td><span style="font-weight:600">${countFeatures(c.features)}</span>/${ALL_FEATURES.length}</td>
+      <td style="font-size:11px;max-width:200px;white-space:normal">${missing.slice(0,5).join(', ')}${missing.length > 5 ? ` +${missing.length-5} more` : ''}</td>
+      <td><span style="color:${potColor};font-weight:700">${pot}</span></td>
+      <td style="font-size:12px;max-width:250px;white-space:normal">${getUpsellApproach(c)}</td>
+    </tr>`
+  }).join('')
+}
+
+function renderDetailsTable() {
+  const sorted = [...allClients].sort((a,b) => a.name.localeCompare(b.name))
+  const dot = (v) => `<span class="feature-dot ${v ? 'on' : 'off'}"></span>`
+  document.getElementById('detailsTableBody').innerHTML = sorted.map(c => {
+    const sc = c.status === 'not relevant' ? 'not-relevant' : c.status
+    return `<tr>
+      <td>${c.id}</td><td><strong>${c.name}</strong></td>
+      <td><span class="badge ${sc}">${c.status || 'none'}</span></td>
+      <td style="font-size:11px">${c.product_type || '—'}</td>
+      <td>${dot(c.features.ai_cs)}</td><td>${dot(c.features.ai_sales)}</td>
+      <td>${dot(c.features.crm)}</td><td>${dot(c.features.tasks)}</td>
+      <td>${dot(c.features.auto_msgs)}</td><td>${dot(c.features.auto_tasks)}</td>
+      <td>${dot(c.features.website)}</td><td>${dot(c.features.direct_book)}</td>
+      <td>${dot(c.features.store)}</td><td>${dot(c.features.guest_exp)}</td>
+      <td>${dot(c.features.reviews)}</td><td>${dot(c.features.iot)}</td>
+      <td>${dot(c.features.damage_waiver)}</td>
+    </tr>`
+  }).join('')
+}
+
+// ─── Filters & Sort ───────────────────────────────────────────────────────────
+function getFiltered() {
+  const search = document.getElementById('searchFilter').value.toLowerCase()
+  const status = document.getElementById('statusFilter').value
+  const risk = document.getElementById('riskFilter').value
+  const product = document.getElementById('productFilter').value
+  return allClients.filter(c => {
+    if (search && !c.name.toLowerCase().includes(search)) return false
+    if (status && c.status !== status) return false
+    if (risk !== '' && c.risk_factor !== parseInt(risk)) return false
+    if (product && c.product_type !== product) return false
+    return true
+  }).sort((a,b) => {
+    let va, vb
+    switch (sortCol) {
+      case 'name': va = a.name; vb = b.name; break
+      case 'status': va = a.status || ''; vb = b.status || ''; break
+      case 'product_type': va = a.product_type || ''; vb = b.product_type || ''; break
+      case 'health': va = calcHealth(a); vb = calcHealth(b); break
+      case 'mood': va = a.mood; vb = b.mood; break
+      case 'risk': va = a.risk_factor; vb = b.risk_factor; break
+      case 'listings': va = a.listings; vb = b.listings; break
+      default: va = a.name; vb = b.name
+    }
+    if (typeof va === 'string') return sortDir === 'asc' ? va.localeCompare(vb) : vb.localeCompare(va)
+    return sortDir === 'asc' ? va - vb : vb - va
+  })
+}
+
+document.getElementById('searchFilter').addEventListener('input', () => renderMainTable(getFiltered()))
+document.getElementById('statusFilter').addEventListener('change', () => renderMainTable(getFiltered()))
+document.getElementById('riskFilter').addEventListener('change', () => renderMainTable(getFiltered()))
+document.getElementById('productFilter').addEventListener('change', () => renderMainTable(getFiltered()))
+
+document.querySelectorAll('th[data-sort]').forEach(th => {
+  th.addEventListener('click', () => {
+    const col = th.dataset.sort
+    sortDir = sortCol === col ? (sortDir === 'asc' ? 'desc' : 'asc') : 'asc'
+    sortCol = col
+    renderMainTable(getFiltered())
+  })
+})
+
+document.querySelectorAll('.tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'))
+    document.querySelectorAll('.tab-content').forEach(tc => tc.classList.remove('active'))
+    tab.classList.add('active')
+    document.getElementById('tab-' + tab.dataset.tab).classList.add('active')
+  })
+})
+
+// ─── Modal ────────────────────────────────────────────────────────────────────
+function buildFeaturesGrid(features) {
+  document.getElementById('featuresGrid').innerHTML = ALL_FEATURES.map(k => `
+    <label class="feature-check">
+      <input type="checkbox" id="feat_${k}" ${features[k] ? 'checked' : ''}>
+      <span>${FEATURE_LABELS[k]}</span>
+    </label>`).join('')
+}
+
+function openEditModal(id) {
+  const c = allClients.find(x => x.id === id)
+  if (!c) return
+  editingId = id
+  document.getElementById('modalTitle').textContent = `Edit — ${c.name}`
+  document.getElementById('editId').value = c.id
+  document.getElementById('editName').value = c.name
+  document.getElementById('editStatus').value = c.status || 'none'
+  document.getElementById('editProduct').value = c.product_type || ''
+  document.getElementById('editListings').value = c.listings
+  document.getElementById('editMood').value = c.mood
+  document.getElementById('editRisk').value = c.risk_factor
+  document.getElementById('editNotes').value = c.notes || ''
+  document.getElementById('deleteClientBtn').style.display = 'block'
+  buildFeaturesGrid(c.features)
+  document.getElementById('modalOverlay').classList.add('open')
+}
+
+function openAddModal() {
+  editingId = null
+  document.getElementById('modalTitle').textContent = 'Add New Client'
+  document.getElementById('editId').value = ''
+  document.getElementById('editName').value = ''
+  document.getElementById('editStatus').value = 'onboarding'
+  document.getElementById('editProduct').value = ''
+  document.getElementById('editListings').value = '0'
+  document.getElementById('editMood').value = '3'
+  document.getElementById('editRisk').value = '0'
+  document.getElementById('editNotes').value = ''
+  document.getElementById('deleteClientBtn').style.display = 'none'
+  buildFeaturesGrid({ ai_cs:false, ai_sales:false, crm:false, tasks:false, auto_msgs:false, auto_tasks:false, website:false, direct_book:false, store:false, guest_exp:false, reviews:false, iot:false, damage_waiver:false })
+  document.getElementById('modalOverlay').classList.add('open')
+}
+
+function closeModal() {
+  document.getElementById('modalOverlay').classList.remove('open')
+  editingId = null
+}
+
+document.getElementById('modalOverlay').addEventListener('click', e => {
+  if (e.target === document.getElementById('modalOverlay')) closeModal()
+})
+
+async function saveClient() {
+  const features = {}
+  ALL_FEATURES.forEach(k => { features[k] = document.getElementById('feat_' + k).checked })
+  const body = {
+    name: document.getElementById('editName').value.trim(),
+    status: document.getElementById('editStatus').value,
+    product_type: document.getElementById('editProduct').value || null,
+    listings: parseInt(document.getElementById('editListings').value) || 0,
+    mood: parseInt(document.getElementById('editMood').value),
+    risk_factor: parseInt(document.getElementById('editRisk').value),
+    notes: document.getElementById('editNotes').value.trim(),
+    features
+  }
+  if (!body.name) { showToast('Client name is required', 'error'); return }
+
+  try {
+    const url = editingId ? `/api/clients/${editingId}` : '/api/clients'
+    const method = editingId ? 'PUT' : 'POST'
+    const res = await fetch(url, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
+    if (!res.ok) throw new Error()
+    closeModal()
+    await loadData()
+    showToast(editingId ? 'Client updated ✓' : 'Client added ✓', 'success')
+  } catch {
+    showToast('Failed to save changes', 'error')
+  }
+}
+
+async function deleteClient() {
+  if (!editingId) return
+  const c = allClients.find(x => x.id === editingId)
+  if (!confirm(`Delete "${c.name}"? This cannot be undone.`)) return
+  try {
+    await fetch(`/api/clients/${editingId}`, { method: 'DELETE' })
+    closeModal()
+    await loadData()
+    showToast('Client deleted', 'success')
+  } catch {
+    showToast('Failed to delete client', 'error')
+  }
+}
+
+async function quickDelete(id) {
+  const c = allClients.find(x => x.id === id)
+  if (!confirm(`Delete "${c.name}"? This cannot be undone.`)) return
+  try {
+    await fetch(`/api/clients/${id}`, { method: 'DELETE' })
+    await loadData()
+    showToast('Client deleted', 'success')
+  } catch {
+    showToast('Failed to delete client', 'error')
+  }
+}
+
+// ─── Toast ────────────────────────────────────────────────────────────────────
+function showToast(msg, type = 'success') {
+  const t = document.getElementById('toast')
+  t.textContent = msg
+  t.className = `toast ${type} show`
+  setTimeout(() => { t.className = 'toast' }, 3000)
+}
+
+// ─── Start ────────────────────────────────────────────────────────────────────
+init()
+</script>
+</body>
+</html>
