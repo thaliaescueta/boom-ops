@@ -1,0 +1,498 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Boom Ops — Migration Daily Report</title>
+<style>
+  /* ── Portal Chrome (dark) ── */
+  :root {
+    --bg: #0f1117; --surface: #1a1d27; --surface2: #242836; --border: #2e3348;
+    --text: #e4e6f0; --text-dim: #8b8fa3; --accent: #6366f1; --purple: #a855f7;
+    --green: #22c55e; --red: #ef4444; --blue: #3b82f6;
+    --green-bg: rgba(34,197,94,0.12); --red-bg: rgba(239,68,68,0.12); --blue-bg: rgba(59,130,246,0.12); --purple-bg: rgba(168,85,247,0.12);
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: var(--bg); color: var(--text); }
+
+  .top-nav {
+    background: var(--surface); border-bottom: 1px solid var(--border);
+    padding: 0 24px; height: 52px; display: flex; align-items: center;
+    justify-content: space-between; position: sticky; top: 0; z-index: 100;
+  }
+  .nav-left { display: flex; align-items: center; gap: 10px; }
+  .nav-logo { width: 32px; height: 32px; background: linear-gradient(135deg, var(--accent), var(--purple)); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 14px; color: #fff; }
+  .nav-title { font-size: 15px; font-weight: 700; }
+  .nav-right { display: flex; align-items: center; gap: 10px; }
+  .role-badge { padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; }
+  .role-badge.admin { background: var(--purple-bg); color: var(--purple); }
+  .role-badge.viewer { background: var(--blue-bg); color: var(--blue); }
+  .nav-user { font-size: 13px; color: var(--text-dim); }
+  .logout-btn { padding: 5px 14px; border-radius: 6px; border: 1px solid var(--border); background: transparent; color: var(--text-dim); font-size: 12px; cursor: pointer; transition: all 0.2s; text-decoration: none; }
+  .logout-btn:hover { border-color: var(--red); color: var(--red); }
+
+  .layout { display: flex; height: calc(100vh - 52px); overflow: hidden; }
+  .sidebar {
+    width: 220px; min-width: 220px; background: var(--surface);
+    border-right: 1px solid var(--border); display: flex; flex-direction: column;
+    transition: width 0.22s ease, min-width 0.22s ease; flex-shrink: 0; overflow: hidden;
+  }
+  .sidebar.collapsed { width: 56px; min-width: 56px; }
+  .main-content { flex: 1; overflow-y: auto; }
+
+  .sidebar-toggle { display: flex; align-items: center; justify-content: flex-end; padding: 12px 14px; border-bottom: 1px solid var(--border); flex-shrink: 0; }
+  .sidebar-toggle-btn { width: 26px; height: 26px; border-radius: 6px; border: 1px solid var(--border); background: var(--surface2); color: var(--text-dim); font-size: 11px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s; flex-shrink: 0; }
+  .sidebar-toggle-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .sidebar-section { padding: 16px 0 8px; flex-shrink: 0; }
+  .sidebar-section-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.6px; color: var(--text-dim); padding: 0 16px 8px; white-space: nowrap; overflow: hidden; transition: opacity 0.15s; }
+  .sidebar.collapsed .sidebar-section-label { opacity: 0; }
+  .sidebar-item { display: flex; align-items: center; gap: 10px; padding: 9px 14px; color: var(--text-dim); text-decoration: none; font-size: 13px; font-weight: 500; transition: all 0.15s; border-left: 3px solid transparent; white-space: nowrap; }
+  .sidebar-item:hover { background: var(--surface2); color: var(--text); }
+  .sidebar-item.active { background: rgba(99,102,241,0.1); color: var(--accent); border-left-color: var(--accent); }
+  .sidebar-item-icon { font-size: 16px; flex-shrink: 0; width: 22px; text-align: center; }
+  .sidebar-item-text { overflow: hidden; transition: opacity 0.15s; }
+  .sidebar.collapsed .sidebar-item-text { opacity: 0; pointer-events: none; }
+  .sidebar.collapsed .sidebar-item { padding: 9px 16px; justify-content: center; }
+
+  /* ── Migration Report Styles (light theme) ── */
+  .report-root {
+    --primary:#6366f1; --pl:#ede9fe;
+    --g50:#f9fafb; --g100:#f3f4f6; --g200:#e5e7eb; --g300:#d1d5db;
+    --g400:#9ca3af; --g500:#6b7280; --g600:#4b5563; --g700:#374151;
+    --g800:#1f2937; --g900:#111827;
+    --r:12px; --sh:0 1px 3px rgba(0,0,0,.08),0 1px 2px rgba(0,0,0,.04);
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: #f0f0f7; color: var(--g900); font-size: 13px; line-height: 1.5;
+    min-height: 100%;
+  }
+  .report-root .topbar { background: white; border-bottom: 1px solid var(--g200); padding: 0 24px; }
+  .report-root .topbar-inner { display: flex; align-items: center; justify-content: space-between; height: 48px; }
+  .report-root .brand { font-size: 14px; font-weight: 900; letter-spacing: -.3px; color: var(--g900); }
+  .report-root .brand em { color: var(--primary); font-style: normal; }
+  .report-root .tb-r { display: flex; align-items: center; gap: 10px; }
+  .report-root .tb-date { font-size: 12px; color: var(--g400); font-weight: 500; }
+  .report-root .btn { display: inline-flex; align-items: center; gap: 5px; padding: 5px 12px; border-radius: 7px; font-size: 11px; font-weight: 600; cursor: pointer; border: 1px solid var(--g200); background: white; color: var(--g600); font-family: inherit; transition: all .12s; }
+  .report-root .btn:hover { background: var(--g50); }
+  .report-root .kpi-strip { display: flex; gap: 10px; padding: 14px 24px; }
+  .report-root .kpi { background: white; border: 1px solid var(--g200); border-radius: 10px; padding: 11px 16px; min-width: 105px; flex: 1; box-shadow: var(--sh); }
+  .report-root .kpi-n { font-size: 22px; font-weight: 800; line-height: 1.1; }
+  .report-root .kpi-l { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--g400); margin-top: 2px; }
+  .report-root .kpi-n.red { color: #dc2626; } .report-root .kpi-n.amber { color: #d97706; } .report-root .kpi-n.green { color: #16a34a; }
+  .report-root .filter-section { padding: 0 24px 14px; }
+  .report-root .filter-row { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; padding-bottom: 7px; }
+  .report-root .filter-row:last-child { padding-bottom: 0; }
+  .report-root .ftab { padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: 600; cursor: pointer; border: 1.5px solid var(--g200); background: white; color: var(--g500); font-family: inherit; transition: all .1s; }
+  .report-root .ftab:hover { border-color: var(--g400); }
+  .report-root .ftab.on { background: var(--primary); color: white; border-color: var(--primary); }
+  .report-root .tab-sep { width: 1px; height: 18px; background: var(--g200); }
+  .report-root .tab-label { font-size: 10px; font-weight: 700; color: var(--g400); text-transform: uppercase; letter-spacing: .05em; white-space: nowrap; }
+  .report-root .sbadge { display: inline-flex; align-items: center; gap: 3px; padding: 2px 8px; border-radius: 20px; font-size: 10px; font-weight: 700; white-space: nowrap; flex-shrink: 0; }
+  .report-root .s-issues { background: #fef2f2; color: #dc2626; border: 1px solid #fecaca; }
+  .report-root .s-stuck { background: #fef2f2; color: #dc2626; border: 1px solid #fecaca; }
+  .report-root .s-on-track { background: #f0fdf4; color: #16a34a; border: 1px solid #bbf7d0; }
+  .report-root .s-waiting { background: #fffbeb; color: #b45309; border: 1px solid #fde68a; }
+  .report-root .s-new { background: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe; }
+  .report-root .s-live { background: #ecfdf5; color: #047857; border: 1px solid #6ee7b7; }
+  .report-root .pbadge { display: inline-flex; align-items: center; padding: 2px 7px; border-radius: 20px; font-size: 10px; font-weight: 700; }
+  .report-root .o-anfisa { background: #ede9fe; color: #6d28d9; } .report-root .o-eyal { background: #dbeafe; color: #1d4ed8; }
+  .report-root .o-maria { background: #fce7f3; color: #be185d; } .report-root .o-sherry { background: #d1fae5; color: #065f46; }
+  .report-root .o-nikka { background: #ecfdf5; color: #047857; }
+  .report-root .m-guy { background: #e0e7ff; color: #3730a3; } .report-root .m-john { background: #fff7ed; color: #c2410c; }
+  .report-root .m-jerric { background: #ecfeff; color: #0e7490; }
+  .report-root .role-lbl { font-size: 9px; color: inherit; opacity: .65; font-weight: 600; margin-left: 1px; }
+  .report-root .list { padding: 0 24px 32px; }
+  .report-root .list-wrap { border-radius: var(--r); overflow: hidden; border: 1px solid var(--g200); box-shadow: var(--sh); }
+  .report-root .list-item { background: white; border-bottom: 1px solid var(--g100); position: relative; }
+  .report-root .list-item:last-child { border-bottom: none; }
+  .report-root .list-item.urgent { border-left: 3px solid #ef4444; }
+  .report-root .list-item.today-active { border-left: 3px solid var(--primary); }
+  .report-root .row-hdr { display: flex; align-items: center; gap: 10px; padding: 10px 14px; cursor: pointer; user-select: none; transition: background .1s; }
+  .report-root .row-hdr:hover { background: var(--g50); }
+  .report-root .list-item.urgent .row-hdr { padding-left: 11px; }
+  .report-root .list-item.today-active .row-hdr { padding-left: 11px; }
+  .report-root .row-toggle { color: var(--g400); font-size: 10px; flex-shrink: 0; width: 14px; transition: transform .15s; display: inline-block; }
+  .report-root .row-toggle.open { transform: rotate(90deg); }
+  .report-root .row-name { font-size: 13px; font-weight: 700; color: var(--g900); width: 168px; flex-shrink: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .report-root .row-people { display: flex; align-items: center; gap: 3px; flex-shrink: 0; width: 170px; }
+  .report-root .row-tl { display: flex; align-items: stretch; gap: 0; flex: 1; }
+  .report-root .tl-chip { display: flex; flex-direction: column; justify-content: center; padding: 0 14px; border-left: 1px solid var(--g200); }
+  .report-root .tl-chip:last-child { border-right: 1px solid var(--g200); }
+  .report-root .tl-chip-lbl { font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; color: var(--g400); white-space: nowrap; }
+  .report-root .tl-chip-val { font-size: 11.5px; font-weight: 700; color: var(--g800); white-space: nowrap; }
+  .report-root .tl-chip-val.warn { color: #d97706; } .report-root .tl-chip-val.good { color: #059669; }
+  .report-root .tl-chip-val.danger { color: #dc2626; } .report-root .tl-chip-val.muted { color: var(--g400); }
+  .report-root .row-counts { display: flex; align-items: center; gap: 5px; margin-left: auto; flex-shrink: 0; padding-left: 12px; }
+  .report-root .count-chip { display: inline-flex; align-items: center; gap: 3px; font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 20px; white-space: nowrap; }
+  .report-root .count-chip.red { background: #fef2f2; color: #dc2626; border: 1px solid #fecaca; }
+  .report-root .count-chip.amber { background: #fffbeb; color: #b45309; border: 1px solid #fde68a; }
+  .report-root .count-chip.blue { background: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe; }
+  .report-root .count-chip.gray { background: var(--g100); color: var(--g500); border: 1px solid var(--g200); }
+  .report-root .row-lastdate { font-size: 10px; font-weight: 600; color: var(--g400); flex-shrink: 0; margin-left: 10px; white-space: nowrap; }
+  .report-root .row-lastdate.today { color: #059669; font-weight: 700; }
+  .report-root .row-detail { display: none; border-top: 1px solid var(--g100); }
+  .report-root .row-detail.open { display: block; }
+  .report-root .detail-grid { display: grid; grid-template-columns: 1fr 1fr; background: var(--g50); }
+  .report-root .detail-col { padding: 14px 16px; border-right: 1px solid var(--g200); }
+  .report-root .detail-col:last-child { border-right: none; }
+  .report-root .detail-col-hdr { font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--g400); margin-bottom: 8px; }
+  .report-root .msg { display: flex; flex-direction: column; gap: 2px; margin-bottom: 7px; }
+  .report-root .msg:last-child { margin-bottom: 0; }
+  .report-root .msg-meta { display: flex; align-items: baseline; gap: 5px; }
+  .report-root .msg-from { font-size: 11px; font-weight: 700; color: var(--g700); }
+  .report-root .msg-time { font-size: 10px; color: var(--g400); }
+  .report-root .msg-text { font-size: 11.5px; color: var(--g600); line-height: 1.55; background: white; border-radius: 0 6px 6px 6px; padding: 5px 8px; border-left: 2px solid var(--g200); }
+  .report-root .msg-text.client { background: #eff6ff; border-left-color: #93c5fd; }
+  .report-root .msg-text.urgent-msg { background: #fef2f2; border-left-color: #fca5a5; }
+  .report-root .pending-block { margin-bottom: 10px; }
+  .report-root .pending-block:last-child { margin-bottom: 0; }
+  .report-root .pend-hdr { display: flex; align-items: center; gap: 5px; margin-bottom: 5px; }
+  .report-root .pend-hdr-lbl { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; color: var(--g600); flex: 1; }
+  .report-root .pend-count { font-size: 10px; font-weight: 700; color: white; background: var(--g400); border-radius: 20px; padding: 0 6px; min-width: 18px; text-align: center; }
+  .report-root .pend-count.red { background: #dc2626; } .report-root .pend-count.amber { background: #d97706; } .report-root .pend-count.blue { background: #2563eb; }
+  .report-root .pend-item { display: flex; align-items: flex-start; gap: 6px; padding: 2px 0; font-size: 11.5px; color: var(--g600); }
+  .report-root .pend-dot { width: 5px; height: 5px; border-radius: 50%; flex-shrink: 0; margin-top: 5px; }
+  .report-root .pend-owner { font-size: 10px; font-weight: 700; background: white; color: var(--g600); border-radius: 10px; padding: 0 5px; white-space: nowrap; flex-shrink: 0; border: 1px solid var(--g200); }
+  .report-root .detail-foot { padding: 8px 16px; border-top: 1px solid var(--g200); background: white; display: flex; align-items: center; gap: 10px; }
+  .report-root .note-area { flex: 1; border: 1px solid var(--g200); border-radius: 7px; padding: 5px 9px; font-size: 11px; font-family: inherit; color: var(--g700); resize: none; height: 32px; background: white; outline: none; transition: height .15s; }
+  .report-root .note-area:focus { border-color: var(--primary); height: 52px; box-shadow: 0 0 0 2px #e0e7ff; }
+  .report-root .note-area::placeholder { color: var(--g300); }
+  .report-root .saved-msg { font-size: 10px; color: #059669; display: none; white-space: nowrap; }
+  .report-root .foot-link { font-size: 11px; color: var(--primary); text-decoration: none; font-weight: 600; white-space: nowrap; }
+  .report-root .foot-link:hover { text-decoration: underline; }
+  .report-root .empty-state { text-align: center; padding: 48px; color: var(--g400); font-weight: 600; background: white; border-radius: var(--r); border: 1px solid var(--g200); }
+  .report-root .section { margin: 0 24px 32px; }
+  .report-root .section-hdr { display: flex; align-items: center; justify-content: space-between; padding: 10px 0; cursor: pointer; user-select: none; }
+  .report-root .section-title { font-size: 13px; font-weight: 700; color: var(--g600); display: flex; align-items: center; gap: 8px; }
+  .report-root .section-toggle { font-size: 11px; font-weight: 600; color: var(--primary); }
+  .report-root .comp-table { background: white; border: 1px solid var(--g200); border-radius: var(--r); overflow: hidden; box-shadow: var(--sh); }
+  .report-root .comp-head, .report-root .comp-row { display: grid; grid-template-columns: 200px 85px 75px 55px 65px 65px 65px; padding: 8px 16px; }
+  .report-root .comp-head { background: var(--g50); border-bottom: 1px solid var(--g200); }
+  .report-root .comp-row { border-bottom: 1px solid var(--g100); font-size: 12px; }
+  .report-root .comp-row:last-child { border-bottom: none; }
+  .report-root .th { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; color: var(--g400); }
+</style>
+</head>
+<body>
+
+<!-- Top Nav -->
+<div class="top-nav">
+  <div class="nav-left">
+    <div class="nav-logo">B</div>
+    <span class="nav-title">Boom Ops</span>
+  </div>
+  <div class="nav-right">
+    <span class="nav-user" id="navUser"></span>
+    <span class="role-badge" id="navRole"></span>
+    <a href="/logout" class="logout-btn">Sign out</a>
+  </div>
+</div>
+
+<!-- Page Layout -->
+<div class="layout">
+
+  <!-- Sidebar -->
+  <div class="sidebar" id="sidebar">
+    <div class="sidebar-toggle">
+      <button class="sidebar-toggle-btn" onclick="toggleSidebar()" title="Toggle sidebar">
+        <span id="sidebarArrow">◀</span>
+      </button>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-section-label">Reports</div>
+      <a href="/" class="sidebar-item">
+        <span class="sidebar-item-icon">📊</span>
+        <span class="sidebar-item-text">CSM Report</span>
+      </a>
+      <a href="/migration" class="sidebar-item active">
+        <span class="sidebar-item-icon">🔄</span>
+        <span class="sidebar-item-text">Migration Daily</span>
+      </a>
+    </div>
+  </div>
+
+  <!-- Main Content -->
+  <div class="main-content">
+  <div class="report-root">
+
+    <!-- Report Sub-header -->
+    <div class="topbar">
+      <div class="topbar-inner">
+        <div class="brand">BOOM <em>·</em> Migration Daily Report</div>
+        <div class="tb-r">
+          <span class="tb-date" id="hdr-date"></span>
+          <button class="btn" onclick="expandAll()">⊞ Expand All</button>
+          <button class="btn" onclick="collapseAll()">⊟ Collapse All</button>
+          <button class="btn" onclick="window.print()">🖨 Print</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="kpi-strip" id="kpi-strip"></div>
+
+    <div class="filter-section">
+      <div class="filter-row">
+        <span class="tab-label">Status</span>
+        <button class="ftab on" onclick="setTab('all')"      id="tab-all">All</button>
+        <button class="ftab"    onclick="setTab('today')"    id="tab-today">● Today</button>
+        <span class="tab-sep"></span>
+        <button class="ftab"    onclick="setTab('issues')"   id="tab-issues">⚠️ Issues</button>
+        <button class="ftab"    onclick="setTab('on-track')" id="tab-on-track">✅ On Track</button>
+        <button class="ftab"    onclick="setTab('waiting')"  id="tab-waiting">⏳ Waiting</button>
+        <button class="ftab"    onclick="setTab('live')"     id="tab-live">🟢 Live</button>
+        <button class="ftab"    onclick="setTab('new')"      id="tab-new">🆕 New</button>
+      </div>
+      <div class="filter-row">
+        <span class="tab-label">Migrator</span>
+        <button class="ftab" onclick="setTab('guy')"    id="tab-guy">Guy</button>
+        <button class="ftab" onclick="setTab('john')"   id="tab-john">John</button>
+        <button class="ftab" onclick="setTab('jerric')" id="tab-jerric">Jerric</button>
+        <span class="tab-sep"></span>
+        <span class="tab-label">Onboarder</span>
+        <button class="ftab" onclick="setTab('anfisa')" id="tab-anfisa">Anfisa</button>
+        <button class="ftab" onclick="setTab('eyal')"   id="tab-eyal">Eyal</button>
+        <button class="ftab" onclick="setTab('maria')"  id="tab-maria">Maria</button>
+        <button class="ftab" onclick="setTab('sherry')" id="tab-sherry">Sherry</button>
+        <button class="ftab" onclick="setTab('nikka')"  id="tab-nikka">Nikka</button>
+      </div>
+    </div>
+
+    <div class="list" id="list-container"></div>
+
+    <div class="section">
+      <div class="section-hdr" onclick="toggleComp()">
+        <div class="section-title">
+          ✅ Completed Migrations
+          <span id="comp-count" class="sbadge s-live" style="font-size:10px;"></span>
+        </div>
+        <span class="section-toggle" id="comp-toggle">Show ▾</span>
+      </div>
+      <div id="comp-body" style="display:none"></div>
+    </div>
+
+  </div><!-- end report-root -->
+  </div><!-- end main-content -->
+</div><!-- end layout -->
+
+<script>
+// ─── Auth check ───────────────────────────────────────────────────────────────
+fetch('/api/me').then(r => r.json()).then(me => {
+  if (me.error) { window.location.href = '/login'; return }
+  document.getElementById('navUser').textContent = me.username
+  const roleEl = document.getElementById('navRole')
+  roleEl.textContent = me.role === 'admin' ? 'Controller' : 'Viewer'
+  roleEl.className = 'role-badge ' + me.role
+}).catch(() => { window.location.href = '/login' })
+
+// ─── Sidebar ──────────────────────────────────────────────────────────────────
+function toggleSidebar() {
+  const sidebar = document.getElementById('sidebar')
+  const arrow = document.getElementById('sidebarArrow')
+  const collapsed = sidebar.classList.toggle('collapsed')
+  arrow.textContent = collapsed ? '▶' : '◀'
+  localStorage.setItem('sidebarCollapsed', collapsed ? '1' : '0')
+}
+if (localStorage.getItem('sidebarCollapsed') === '1') {
+  document.getElementById('sidebar').classList.add('collapsed')
+  document.getElementById('sidebarArrow').textContent = '▶'
+}
+
+// ─── Report Data & Logic ──────────────────────────────────────────────────────
+var TODAY    = new Date().toISOString().slice(0, 10)
+var TODAY_DT = new Date(TODAY + 'T12:00:00')
+var currentTab = 'all'
+var compOpen   = false
+
+var CHANNELS = [
+  { id:'furnished-club', client:'Furnished Club', slackId:'C0AA5H452LD', obm:'Anfisa', migrator:'Guy', status:'issues', lastDate:'2026-02-23', startDate:'2026-01-22', handoverDate:null, migrationDate:'2026-02-18', migrationDone:true,
+    messages:[{from:'Pini A',role:'client',date:'Today 9:51am',text:'hi guy it seems like a lot of the messages and the inquiries from all the accounts on Airbnb and Booking.com are not coming in properly — no notification on the mobile app when reservations come in. The auto messages are not going through also.'},{from:'Pini A',role:'client',date:'Today 9:49am',text:'we need an assistant here asap'}],
+    issues:[{text:'Mobile notifications not working on Airbnb & BDC',owner:'Guy'},{text:'Auto messages not firing',owner:'Guy'},{text:'mkoshkerman Airbnb account not syncing',owner:'Guy'}],
+    pendingClient:['VRBO self-connection (follow Intercom instructions)','Latch smart lock integration setup'],
+    pendingTeam:[{text:'Investigate + fix notification/messaging pipeline',owner:'Guy'},{text:'Resolve mkoshkerman Airbnb sync',owner:'Guy'},{text:'BlueGround channel onboarding (awaiting response)',owner:'Guy'}]},
+  { id:'beach-apartment', client:'Beach Apartment', slackId:'C09SR94FD0U', obm:'Eyal', migrator:null, status:'on-track', lastDate:'2026-02-23', startDate:'2025-11-13', handoverDate:null, migrationDate:'2026-02-25', migrationDone:false,
+    messages:[{from:'Eyal',role:'team',date:'Today 1:20am',text:'Hi Bar, 14:00 is great, sending an invite now 👍'},{from:'Bar Chetrit',role:'client',date:'Today 12:52am',text:'Tomorrow 14 is ok?'}],
+    issues:[{text:'Duve colleague login failing — OTP link expires on use',owner:'Eyal'},{text:'Isracard e-commerce approval pending (client side)',owner:'Eyal'}],
+    pendingClient:['Export past reservations from Optima (needed before migration)','Complete Isracard e-commerce approval (3DS)',"Confirm pricing strategy with Aviad in tomorrow's call"],
+    pendingTeam:[{text:'CRM training call tomorrow Feb 24 at 14:00',owner:'Eyal'},{text:'Finalize dynamic pricing setup for all listings',owner:'Eyal'},{text:'Complete website setup in Boom',owner:'Eyal'},{text:'Resolve Duve colleague access',owner:'Eyal'}]},
+  { id:'gal-day', client:'GalDay / Seaelo / Lninihol', slackId:'C09HN9G8QMR', obm:'Anfisa', migrator:'Guy', status:'live', lastDate:'2026-02-18', startDate:'2025-09-30', handoverDate:null, migrationDate:'2026-02-16', migrationDone:true,
+    messages:[{from:'Eyal',role:'team',date:'Feb 18',text:'Guy — Yuval said there is a way to do the non-refundable rate plan through Boom, he is going to help with this 🙌'},{from:'Eyal',role:'team',date:'Feb 17',text:'Hi Guy — Gal wants to add Non-Refundable options for some listings. Is it best to do it directly through Booking rate plan?'}],
+    issues:[{text:'Non-refundable rate plan not yet set up on BDC',owner:'Eyal'},{text:'Markup discrepancy: Boom 15% vs Extranet 17.5%',owner:'Guy'}],
+    pendingClient:['Confirm markup % to apply on Airbnb and BDC','Provide access to Azul and Indigo accounts','Set up automated messages'],
+    pendingTeam:[{text:'Set up non-refundable BDC rate plans (Yuval helping)',owner:'Eyal'},{text:'Investigate markup discrepancy and correct',owner:'Guy'},{text:'Migrate remaining Azul + Indigo accounts',owner:'Guy'}]},
+  { id:'riviera-rentals', client:'Riviera Rentals', slackId:'C0ABT5U3FR6', obm:'Anfisa', migrator:null, status:'on-track', lastDate:'2026-02-21', startDate:'2026-01-26', handoverDate:null, migrationDate:null, migrationDone:false,
+    messages:[{from:'Oswaldo',role:'client',date:'Feb 21',text:'Hello Anfisa, here are the terms and conditions as requested.'},{from:'Oswaldo',role:'client',date:'Feb 18',text:"We are not able to see the Loom videos — we'd like to see the ones about \"Setup Cleaning Automated tasks for checkouts\" and all tasks related."}],
+    issues:[],
+    pendingClient:['Complete property creation spreadsheet','Review and confirm Streamline reservation export','Watch Loom cleaning task setup video'],
+    pendingTeam:[{text:'Schedule next sync/onboarding call',owner:'Anfisa'},{text:'Review Streamline reservation import',owner:'Anfisa'},{text:'Set migration target date',owner:'Anfisa'}]},
+  { id:'staycating', client:'Staycating', slackId:'C0A91KQAZFT', obm:'Anfisa', migrator:'Guy', status:'on-track', lastDate:'2026-02-19', startDate:'2026-01-14', handoverDate:null, migrationDate:null, migrationDone:false,
+    messages:[{from:'Anfisa',role:'team',date:'Feb 19',text:'Booking widget: if using WordPress, follow instructions file. If not WordPress — add as iframe at staycating.bookingsboom.com/search-widget'},{from:'Vernon',role:'client',date:'Feb 13',text:"We can implement Boom website, but I have a website under development: staycating.com when it goes live!"}],
+    issues:[],
+    pendingClient:["Connect Stripe (ensure API key doesn't contain \"TEST\")",'Decide: Boom website or existing site under development','Fill in Property Update spreadsheet tab','Complete pricing setup (do NOT sync — only save)'],
+    pendingTeam:[{text:'Get OTA credentials + review accounts',owner:'Guy'},{text:'Set migration target date (currently March TBD)',owner:'Anfisa'}]},
+  { id:'central-management', client:'Central Management', slackId:'C0A8P2G4KGW', obm:null, migrator:'Guy', status:'on-track', lastDate:'2026-02-20', startDate:'2026-01-15', handoverDate:null, migrationDate:null, migrationDone:false,
+    messages:[{from:'Doug',role:'client',date:'Feb 20',text:'Morning, can you set up your default automated messages for now please?'},{from:'Guy',role:'team',date:'Feb 20',text:"Thank you I'm in — accessing your 3 Airbnb accounts (main + 2 co-hosts via Guesty)."}],
+    issues:[],pendingClient:['Set up default automated messages'],
+    pendingTeam:[{text:'Complete OTA account review',owner:'Guy'},{text:'Prepare property matching + migration plan',owner:'Guy'}]},
+  { id:'se-apartamentos', client:'SE Apartamentos', slackId:'C0A942TQ6KZ', obm:'Maria', migrator:null, status:'on-track', lastDate:'2026-02-13', startDate:'2026-01-19', handoverDate:null, migrationDate:null, migrationDone:false,
+    messages:[{from:'Maria',role:'team',date:'Feb 13',text:'Call recap: AI config training done (copilot/autopilot, security settings, review responses). Next call after Feb 24 — CRM training and migration progress.'},{from:'Sofia',role:'client',date:'Feb 13',text:'And if I set them in English will it be translated?'}],
+    issues:[{text:'0% VAT configuration — dev ticket created, not resolved',owner:'Maria'}],
+    pendingClient:['Provide list of 50+ owners for bulk import','Complete invoice configuration examples'],
+    pendingTeam:[{text:'Schedule CRM training call (after Feb 24)',owner:'Maria'},{text:'Clarify Portuguese auto-messages + AI translation behavior',owner:'Maria'},{text:'Follow up on 0% VAT dev ticket resolution',owner:'Maria'}]},
+  { id:'guroom', client:'GuroomHolidayHomes', slackId:'C0A8SFYVC20', obm:'Eyal', migrator:'John', status:'waiting', lastDate:'2026-02-09', startDate:'2026-01-14', handoverDate:null, migrationDate:'2026-02-10', migrationDone:false,
+    messages:[{from:'John',role:'team',date:'Feb 9',text:'Migration Update: Waiting for client to finish assigned tasks — listing financial details, calendar settings, Boom listing matching. If not complete today, migration cannot happen tomorrow.'},{from:'Eyal',role:'team',date:'Feb 9',text:"Automated Task meeting won't be a blocker for the migration 👍"}],
+    issues:[{text:'Migration blocked — client has not completed required tasks',owner:'John'}],
+    pendingClient:['Complete listing financial details in Boom','Set up calendar settings','Confirm Boom ↔ Airbnb listing matching'],
+    pendingTeam:[{text:'Follow up with client, reschedule migration date',owner:'Eyal'},{text:'Stand by for migration once client is ready',owner:'John'}]},
+  { id:'fidalsa', client:'Fidalsa', slackId:'C09UMJ0KD63', obm:'Anfisa', migrator:'Jerric', status:'issues', lastDate:'2026-02-09', startDate:'2025-11-04', handoverDate:null, migrationDate:'2026-01-28', migrationDone:true,
+    messages:[{from:'Anfisa',role:'team',date:'Feb 9',text:'Fidalsa — Jerric please focus on them today. 5 open items listed below.'},{from:'Jerric',role:'team',date:'Feb 6',text:'John and I are on standby for one last pending with Tania — creating a BDC IR for cancellation.'}],
+    issues:[{text:'Duplicate reservations need deletion (client closing month with owners)',owner:'Jerric'},{text:'Reservations not pushed from Boom to VRBO',owner:'Jerric'},{text:'Flamenca listing not finalized',owner:'Jerric'},{text:'Basque Haven not connected — RU ticket #344068',owner:'Jerric'},{text:'10 properties with channel errors (Marketing > Channels)',owner:'Jerric'}],
+    pendingClient:['Cooperate on deletion of duplicate reservations','Confirm Flamenca listing details'],
+    pendingTeam:[{text:'Delete duplicate reservations',owner:'Jerric'},{text:'Push Boom reservations to VRBO',owner:'Jerric'},{text:'Finalize Flamenca',owner:'Jerric'},{text:'Reconnect Basque Haven via RU (ticket #344068)',owner:'Jerric'},{text:'Fix channel errors on 10 properties',owner:'Jerric'}]},
+  { id:'verano', client:'Verano', slackId:'', obm:'Anfisa', migrator:'Jerric', status:'issues', lastDate:'2026-02-09', startDate:'2026-01-15', handoverDate:null, migrationDate:'2026-02-04', migrationDone:true,
+    messages:[{from:'Stas (Dev)',role:'team',date:'Feb 5',text:'Bug #13575: Manual price overrides removed during migration — listings booked at unintended prices.'},{from:'Jerric',role:'team',date:'Feb 5',text:'For NextPax markups: Listing > Finance > Channel Mark Ups. Use decimal — 20% = 1.20, 18% = 1.18.'}],
+    issues:[{text:'Bug #13575 — manual price overrides wiped during migration',owner:'Jerric'},{text:'PriceLabs child listing pricing incorrect',owner:'Jerric'},{text:'Markup discrepancies on multiple listings',owner:'Jerric'}],
+    pendingClient:['Confirm corrected markup % for all listings','Review PriceLabs parent/child setup with Boom team'],
+    pendingTeam:[{text:'Fix or workaround for bug #13575 (dev involved)',owner:'Jerric'},{text:'Investigate and fix PriceLabs child listing pull',owner:'Jerric'},{text:'Correct markup on all affected listings',owner:'Jerric'}]},
+  { id:'duty', client:'Duty (Yarden / Liraz)', slackId:'C0A15UEP0AY', obm:'Maria', migrator:null, status:'stuck', lastDate:'2026-02-05', startDate:'2025-12-02', handoverDate:null, migrationDate:null, migrationDone:false,
+    messages:[{from:'Maria',role:'team',date:'Feb 5',text:"Hello Yarden — the last two meetings didn't happen. What would be a convenient time to meet again and move forward with the tasks?"},{from:'Maria',role:'team',date:'Jan 26',text:'Sending pricing training videos since training sessions couldn\'t happen. Please watch and work on pricing setup.'}],
+    issues:[{text:'Client (Yarden) unresponsive — 2 missed meetings',owner:'Maria'}],
+    pendingClient:['Respond and schedule next meeting with Maria','Watch + complete pricing training videos','Complete all remaining prep tasks in Boom','Complete WhatsApp / Meta Business integration'],
+    pendingTeam:[{text:'Continue follow-up and escalate if no response',owner:'Maria'},{text:'WhatsApp / Meta Business connection (in progress)',owner:'Or'}]},
+  { id:'vredenberg', client:'Vredenberg Properties', slackId:'C0ADMMJL2JJ', obm:'Nikka', migrator:null, status:'new', lastDate:'2026-02-08', startDate:'2026-02-08', handoverDate:null, migrationDate:null, migrationDone:false,
+    messages:[{from:'Nikka',role:'team',date:'Feb 8',text:'Channel created. Onboarding canvas shared. Waiting for client to begin intake.'}],
+    issues:[],
+    pendingClient:['Begin intake process — review onboarding canvas','Provide property and account details'],
+    pendingTeam:[{text:'Initial client outreach and kickoff call',owner:'Nikka'}]}
+]
+
+var COMPLETED = [
+  {client:'White Mountain Vacations',date:'2026-02-18',migrator:'John',cm:'RU',ab:17,bdc:0,exp:0},
+  {client:'Furnished Club',date:'2026-02-18',migrator:'Guy',cm:'RU',ab:33,bdc:19,exp:4},
+  {client:'GalDay / Lninihol',date:'2026-02-16',migrator:'Guy',cm:'NP',ab:11,bdc:12,exp:0},
+  {client:'Eden Villas Miami',date:'2026-02-09',migrator:'Guy',cm:'RU',ab:36,bdc:0,exp:0},
+  {client:'Verano',date:'2026-02-04',migrator:'Anfisa',cm:'NP',ab:49,bdc:42,exp:0},
+  {client:'R2M',date:'2026-02-04',migrator:'Anfisa',cm:'RU',ab:9,bdc:10,exp:0},
+  {client:'BizFlats',date:'2026-02-02',migrator:'Guy',cm:'NP',ab:18,bdc:13,exp:0},
+  {client:'SevenLion',date:'2026-01-30',migrator:'Nitzan',cm:'—',ab:0,bdc:0,exp:0},
+  {client:'Property Rental Club',date:'2026-01-29',migrator:'Guy',cm:'RU',ab:77,bdc:57,exp:37},
+  {client:'Fidalsa Holidays',date:'2026-01-28',migrator:'Jerric',cm:'RU',ab:98,bdc:81,exp:0},
+  {client:'Host Connect / Map Short',date:'2026-01-26',migrator:'Jerric',cm:'NP',ab:32,bdc:34,exp:0},
+  {client:'Smith & Adams',date:'2026-01-21',migrator:'Jerric',cm:'RU',ab:163,bdc:173,exp:0},
+  {client:'TLV2Go',date:'2026-01-20',migrator:'Guy',cm:'RU',ab:45,bdc:0,exp:0},
+  {client:'GalDay (1st)',date:'2026-01-19',migrator:'Guy',cm:'NP',ab:26,bdc:26,exp:0},
+  {client:'2nd Homes Miika',date:'2026-01-12',migrator:'Jerric',cm:'RU',ab:58,bdc:50,exp:40},
+  {client:'White City Limassol',date:'2026-01-08',migrator:'Guy',cm:'NP',ab:21,bdc:21,exp:0}
+]
+
+var STATUS_SORT   = {issues:0,stuck:0,waiting:1,live:2,'on-track':3,new:4}
+var STATUS_LABELS = {issues:'⚠️ Issues',stuck:'🚫 Stuck','on-track':'✅ On Track',waiting:'⏳ Waiting',new:'🆕 New',live:'🟢 Live'}
+
+document.getElementById('hdr-date').textContent =
+  new Date().toLocaleDateString('en-US',{weekday:'long',year:'numeric',month:'long',day:'numeric'})
+renderKpis(); renderList(); renderCompleted()
+
+function renderKpis() {
+  var active=CHANNELS.length, issues=CHANNELS.filter(c=>c.status==='issues'||c.status==='stuck').length
+  var todayAct=CHANNELS.filter(c=>c.lastDate===TODAY).length, compMTD=COMPLETED.filter(c=>c.date.slice(0,7)==='2026-02').length
+  document.getElementById('kpi-strip').innerHTML=mkKpi(active,'Active Migrations','')+mkKpi(todayAct,'Updated Today','green')+mkKpi(issues,'Need Attention','red')+mkKpi(compMTD,'Completed Feb','amber')
+}
+function mkKpi(n,l,c){return '<div class="kpi"><div class="kpi-n '+c+'">'+n+'</div><div class="kpi-l">'+l+'</div></div>'}
+
+function setTab(t) {
+  currentTab=t
+  document.querySelectorAll('.ftab').forEach(el=>el.classList.remove('on'))
+  var el=document.getElementById('tab-'+t); if(el) el.classList.add('on')
+  renderList()
+}
+function matchTab(c) {
+  if(currentTab==='all') return true; if(currentTab==='today') return c.lastDate===TODAY
+  if(currentTab==='issues') return c.status==='issues'||c.status==='stuck'
+  if(currentTab==='on-track') return c.status==='on-track'; if(currentTab==='waiting') return c.status==='waiting'
+  if(currentTab==='live') return c.status==='live'; if(currentTab==='new') return c.status==='new'
+  if(currentTab==='guy') return c.migrator==='Guy'; if(currentTab==='john') return c.migrator==='John'
+  if(currentTab==='jerric') return c.migrator==='Jerric'; if(currentTab==='anfisa') return c.obm==='Anfisa'
+  if(currentTab==='eyal') return c.obm==='Eyal'; if(currentTab==='maria') return c.obm==='Maria'
+  if(currentTab==='sherry') return c.obm==='Sherry'; if(currentTab==='nikka') return c.obm==='Nikka'
+  return true
+}
+
+function daysDiff(d){return Math.round((TODAY_DT-new Date(d+'T12:00:00'))/86400000)}
+function daysUntil(d){return Math.round((new Date(d+'T12:00:00')-TODAY_DT)/86400000)}
+function shortDate(d){return new Date(d+'T12:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric'})}
+
+function renderList() {
+  var items=CHANNELS.filter(matchTab).slice().sort((a,b)=>{var sa=STATUS_SORT[a.status]??5,sb=STATUS_SORT[b.status]??5;return sa!==sb?sa-sb:b.lastDate>a.lastDate?1:-1})
+  var container=document.getElementById('list-container')
+  if(!items.length){container.innerHTML='<div class="empty-state">No channels match this filter.</div>';return}
+  container.innerHTML='<div class="list-wrap">'+items.map(buildRow).join('')+'</div>'
+}
+
+function buildRow(c) {
+  var isToday=c.lastDate===TODAY, isUrgent=c.status==='issues'||c.status==='stuck'
+  var itemCls='list-item'+(isUrgent?' urgent':isToday?' today-active':'')
+  var note=localStorage.getItem('note_'+c.id)||''
+  var slackUrl=c.slackId?'https://boomnoworkspace.slack.com/archives/'+c.slackId:null
+  var people=''
+  if(c.obm) people+='<span class="pbadge o-'+c.obm.toLowerCase()+'">'+c.obm+'<span class="role-lbl"> OBM</span></span>'
+  if(c.migrator) people+='<span class="pbadge m-'+c.migrator.toLowerCase()+'">'+c.migrator+'<span class="role-lbl"> Mig</span></span>'
+  if(!c.obm&&!c.migrator) people='<span style="font-size:10px;color:var(--g400)">—</span>'
+  var startedD=daysDiff(c.startDate),startedCls=startedD>90?'tl-chip-val warn':'tl-chip-val'
+  var handoverD=c.handoverDate?daysDiff(c.handoverDate):null
+  var handoverVal=handoverD!==null?shortDate(c.handoverDate)+' · '+handoverD+'d':'same as start'
+  var handoverCls='tl-chip-val'+(handoverD!==null&&handoverD>90?' warn':'')
+  var migVal,migCls
+  if(!c.migrationDate){migVal='TBD';migCls='tl-chip-val muted'}
+  else if(c.migrationDone){migVal=shortDate(c.migrationDate)+' ✓';migCls='tl-chip-val good'}
+  else{var until=daysUntil(c.migrationDate);migCls=until<0?'tl-chip-val danger':until<=3?'tl-chip-val warn':'tl-chip-val good';migVal=shortDate(c.migrationDate)+(until<0?' · '+Math.abs(until)+'d late':until===0?' · today!':' · in '+until+'d')}
+  var chips=''
+  if(c.issues.length) chips+='<span class="count-chip red">🔴 '+c.issues.length+' issue'+(c.issues.length>1?'s':'')+'</span>'
+  if(c.pendingClient.length) chips+='<span class="count-chip amber">👤 '+c.pendingClient.length+' client</span>'
+  if(c.pendingTeam.length) chips+='<span class="count-chip blue">🔧 '+c.pendingTeam.length+' team</span>'
+  if(!chips) chips='<span class="count-chip gray">✓ clear</span>'
+  var msgsHtml=c.messages.map(m=>'<div class="msg"><div class="msg-meta"><span class="msg-from">'+esc(m.from)+'</span><span class="msg-time">'+esc(m.date)+'</span></div><div class="msg-text'+(m.role==='client'?' client':isUrgent?' urgent-msg':'')+'">'+esc(m.text)+'</div></div>').join('')
+  var issuesHtml=c.issues.length?'<div class="pending-block"><div class="pend-hdr"><span style="font-size:11px">🔴</span><span class="pend-hdr-lbl">Open Issues</span><span class="pend-count red">'+c.issues.length+'</span></div>'+c.issues.map(i=>'<div class="pend-item"><div class="pend-dot" style="background:#ef4444"></div><span style="flex:1">'+esc(i.text)+'</span><span class="pend-owner">'+esc(i.owner)+'</span></div>').join('')+'</div>':''
+  var clientHtml=c.pendingClient.length?'<div class="pending-block"><div class="pend-hdr"><span style="font-size:11px">👤</span><span class="pend-hdr-lbl">Pending · Client</span><span class="pend-count amber">'+c.pendingClient.length+'</span></div>'+c.pendingClient.map(t=>'<div class="pend-item"><div class="pend-dot" style="background:#f59e0b"></div><span>'+esc(t)+'</span></div>').join('')+'</div>':''
+  var teamHtml=c.pendingTeam.length?'<div class="pending-block"><div class="pend-hdr"><span style="font-size:11px">🔧</span><span class="pend-hdr-lbl">Pending · Boom Team</span><span class="pend-count blue">'+c.pendingTeam.length+'</span></div>'+c.pendingTeam.map(t=>'<div class="pend-item"><div class="pend-dot" style="background:#6366f1"></div><span style="flex:1">'+esc(t.text)+'</span><span class="pend-owner">'+esc(t.owner)+'</span></div>').join('')+'</div>':''
+  var slackLinkHtml=slackUrl?'<a class="foot-link" href="'+slackUrl+'" target="_blank">Open in Slack →</a>':'<span></span>'
+  return '<div class="'+itemCls+'" id="item-'+c.id+'">'+
+    '<div class="row-hdr" onclick="toggleRow(\''+c.id+'\')">'+
+      '<span class="row-toggle" id="tog-'+c.id+'">▶</span>'+
+      '<span class="row-name">'+esc(c.client)+'</span>'+
+      '<span class="sbadge s-'+c.status+'">'+(STATUS_LABELS[c.status]||c.status)+'</span>'+
+      '<div class="row-people">'+people+'</div>'+
+      '<div class="row-tl">'+
+        '<div class="tl-chip"><div class="tl-chip-lbl">⏱ Started</div><div class="'+startedCls+'">'+shortDate(c.startDate)+' · '+startedD+'d</div></div>'+
+        '<div class="tl-chip"><div class="tl-chip-lbl">🤝 Handover</div><div class="'+handoverCls+'">'+handoverVal+'</div></div>'+
+        '<div class="tl-chip"><div class="tl-chip-lbl">🎯 Migration</div><div class="'+migCls+'">'+migVal+'</div></div>'+
+      '</div>'+
+      '<div class="row-counts">'+chips+'</div>'+
+      '<span class="row-lastdate'+(isToday?' today':'')+'">'+( isToday?'● Today':'Last: '+shortDate(c.lastDate))+'</span>'+
+    '</div>'+
+    '<div class="row-detail" id="det-'+c.id+'">'+
+      '<div class="detail-grid">'+
+        '<div class="detail-col"><div class="detail-col-hdr">Latest from Slack</div>'+msgsHtml+'</div>'+
+        '<div class="detail-col">'+issuesHtml+clientHtml+teamHtml+((!issuesHtml&&!clientHtml&&!teamHtml)?'<span style="font-size:12px;color:var(--g400)">✓ No open items</span>':'')+'</div>'+
+      '</div>'+
+      '<div class="detail-foot">'+
+        '<textarea class="note-area" id="note-'+c.id+'" placeholder="Add a note for today…" onblur="saveNote(\''+c.id+'\')" onclick="event.stopPropagation()">'+esc(note)+'</textarea>'+
+        slackLinkHtml+'<span class="saved-msg" id="sv-'+c.id+'">✓ Saved</span>'+
+      '</div>'+
+    '</div>'+
+  '</div>'
+}
+
+function toggleRow(id){var det=document.getElementById('det-'+id),tog=document.getElementById('tog-'+id);if(!det)return;det.classList.toggle('open');tog.classList.toggle('open')}
+function expandAll(){document.querySelectorAll('.row-detail').forEach(el=>el.classList.add('open'));document.querySelectorAll('.row-toggle').forEach(el=>el.classList.add('open'))}
+function collapseAll(){document.querySelectorAll('.row-detail').forEach(el=>el.classList.remove('open'));document.querySelectorAll('.row-toggle').forEach(el=>el.classList.remove('open'))}
+function saveNote(id){var el=document.getElementById('note-'+id);if(!el)return;localStorage.setItem('note_'+id,el.value);var sv=document.getElementById('sv-'+id);if(sv){sv.style.display='inline';setTimeout(()=>sv.style.display='none',2000)}}
+
+function renderCompleted() {
+  document.getElementById('comp-count').textContent=COMPLETED.length
+  var html='<div class="comp-table"><div class="comp-head"><div class="th">Client</div><div class="th">Date</div><div class="th">Migrator</div><div class="th">CM</div><div class="th">Airbnb</div><div class="th">BDC</div><div class="th">Expedia</div></div>'
+  COMPLETED.forEach(c=>{var cs=c.cm==='RU'?'background:#dbeafe;color:#1e40af':c.cm==='NP'?'background:#f5f3ff;color:#6d28d9':'color:var(--g400)';html+='<div class="comp-row"><div style="font-weight:600">'+esc(c.client)+'</div><div style="color:var(--g500)">'+shortDate(c.date)+'</div><div>'+esc(c.migrator)+'</div><div><span class="sbadge" style="'+cs+'">'+esc(c.cm)+'</span></div><div style="font-weight:600">'+(c.ab||'—')+'</div><div style="font-weight:600">'+(c.bdc||'—')+'</div><div style="font-weight:600">'+(c.exp||'—')+'</div></div>'})
+  document.getElementById('comp-body').innerHTML=html+'</div>'
+}
+function toggleComp(){compOpen=!compOpen;document.getElementById('comp-body').style.display=compOpen?'block':'none';document.getElementById('comp-toggle').textContent=compOpen?'Hide ▴':'Show ▾'}
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')}
+</script>
+</body>
+</html>

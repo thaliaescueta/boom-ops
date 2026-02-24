@@ -78,6 +78,10 @@ app.get('/logout', (req, res) => {
   res.redirect('/login')
 })
 
+app.get('/migration', requireAuth, (_req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'migration.html'))
+})
+
 // ─── API ──────────────────────────────────────────────────────────────────────
 app.get('/api/me', (req, res) => {
   if (!req.session.user) return res.status(401).json({ error: 'Not logged in' })
