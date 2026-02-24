@@ -1,0 +1,1660 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Boom Ops — Weekly COO Report</title>
+<style>
+  /* ── Portal Chrome (dark) ── */
+  :root {
+    --bg: #0f1117; --surface: #1a1d27; --surface2: #242836; --border: #2e3348;
+    --text: #e4e6f0; --text-dim: #8b8fa3; --accent: #6366f1; --purple: #a855f7;
+    --green: #22c55e; --red: #ef4444; --blue: #3b82f6;
+    --green-bg: rgba(34,197,94,0.12); --red-bg: rgba(239,68,68,0.12); --blue-bg: rgba(59,130,246,0.12); --purple-bg: rgba(168,85,247,0.12);
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: var(--bg); color: var(--text); }
+
+  .top-nav {
+    background: var(--surface); border-bottom: 1px solid var(--border);
+    padding: 0 24px; height: 52px; display: flex; align-items: center;
+    justify-content: space-between; position: sticky; top: 0; z-index: 100;
+  }
+  .nav-left { display: flex; align-items: center; gap: 10px; }
+  .nav-logo { width: 32px; height: 32px; background: linear-gradient(135deg, var(--accent), var(--purple)); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 14px; color: #fff; }
+  .nav-title { font-size: 15px; font-weight: 700; }
+  .nav-right { display: flex; align-items: center; gap: 10px; }
+  .role-badge { padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; }
+  .role-badge.admin { background: var(--purple-bg); color: var(--purple); }
+  .role-badge.viewer { background: var(--blue-bg); color: var(--blue); }
+  .nav-user { font-size: 13px; color: var(--text-dim); }
+  .logout-btn { padding: 5px 14px; border-radius: 6px; border: 1px solid var(--border); background: transparent; color: var(--text-dim); font-size: 12px; cursor: pointer; transition: all 0.2s; text-decoration: none; }
+  .logout-btn:hover { border-color: var(--red); color: var(--red); }
+
+  .layout { display: flex; height: calc(100vh - 52px); overflow: hidden; }
+  .sidebar {
+    width: 220px; min-width: 220px; background: var(--surface);
+    border-right: 1px solid var(--border); display: flex; flex-direction: column;
+    transition: width 0.22s ease, min-width 0.22s ease; flex-shrink: 0; overflow: hidden;
+  }
+  .sidebar.collapsed { width: 56px; min-width: 56px; }
+  .main-content { flex: 1; overflow-y: auto; }
+
+  .sidebar-toggle { display: flex; align-items: center; justify-content: flex-end; padding: 12px 14px; border-bottom: 1px solid var(--border); flex-shrink: 0; }
+  .sidebar-toggle-btn { width: 26px; height: 26px; border-radius: 6px; border: 1px solid var(--border); background: var(--surface2); color: var(--text-dim); font-size: 11px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s; flex-shrink: 0; }
+  .sidebar-toggle-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .sidebar-section { padding: 16px 0 8px; flex-shrink: 0; }
+  .sidebar-section-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.6px; color: var(--text-dim); padding: 0 16px 8px; white-space: nowrap; overflow: hidden; transition: opacity 0.15s; }
+  .sidebar.collapsed .sidebar-section-label { opacity: 0; }
+  .sidebar-item { display: flex; align-items: center; gap: 10px; padding: 9px 14px; color: var(--text-dim); text-decoration: none; font-size: 13px; font-weight: 500; transition: all 0.15s; border-left: 3px solid transparent; white-space: nowrap; }
+  .sidebar-item:hover { background: var(--surface2); color: var(--text); }
+  .sidebar-item.active { background: rgba(99,102,241,0.1); color: var(--accent); border-left-color: var(--accent); }
+  .sidebar-item-icon { font-size: 16px; flex-shrink: 0; width: 22px; text-align: center; }
+  .sidebar-item-text { overflow: hidden; transition: opacity 0.15s; }
+  .sidebar.collapsed .sidebar-item-text { opacity: 0; pointer-events: none; }
+  .sidebar.collapsed .sidebar-item { padding: 9px 16px; justify-content: center; }
+
+  /* ── Weekly Report Styles (light theme, scoped) ── */
+  .report-root {
+    --rp-bg: #f5f6fa; --rp-card: #ffffff; --rp-border: #e1e4e8;
+    --rp-text: #1f2937; --rp-muted: #6b7280; --rp-primary: #2563eb;
+    --rp-critical: #dc2626; --rp-critical-bg: #fef2f2;
+    --rp-attention: #f59e0b; --rp-attention-bg: #fffbeb;
+    --rp-normal: #10b981; --rp-normal-bg: #ecfdf5;
+    --rp-module-tag: #e0e7ff; --rp-module-text: #3730a3;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: var(--rp-bg); color: var(--rp-text); line-height: 1.5;
+    padding: 24px; min-height: 100%;
+  }
+  .report-root .container { max-width: 1200px; margin: 0 auto; }
+  .report-root h1 { font-size: 28px; font-weight: 700; margin-bottom: 4px; }
+  .report-root .subtitle { color: var(--rp-muted); font-size: 14px; margin-bottom: 32px; }
+  .report-root .section-title { font-size: 20px; font-weight: 600; margin: 32px 0 16px; padding-bottom: 8px; border-bottom: 2px solid var(--rp-primary); }
+
+  .report-root .overview-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 16px; margin-bottom: 32px; }
+  .report-root .stat-card { background: var(--rp-card); border-radius: 12px; padding: 20px; border: 1px solid var(--rp-border); text-align: center; }
+  .report-root .stat-card .number { font-size: 36px; font-weight: 700; }
+  .report-root .stat-card .label { font-size: 13px; color: var(--rp-muted); margin-top: 4px; }
+  .report-root .stat-card.critical .number { color: var(--rp-critical); }
+  .report-root .stat-card.attention .number { color: var(--rp-attention); }
+  .report-root .stat-card.normal .number { color: var(--rp-normal); }
+  .report-root .stat-card.intercom { border-left: 4px solid #6366f1; }
+  .report-root .stat-card.migration { border-left: 4px solid #0ea5e9; }
+  .report-root .stat-card.support { border-left: 4px solid #8b5cf6; }
+
+  .report-root .badge { display: inline-block; font-size: 11px; font-weight: 600; padding: 2px 10px; border-radius: 999px; text-transform: uppercase; letter-spacing: 0.5px; }
+  .report-root .badge.critical { background: var(--rp-critical-bg); color: var(--rp-critical); border: 1px solid #fecaca; }
+  .report-root .badge.attention { background: var(--rp-attention-bg); color: #b45309; border: 1px solid #fde68a; }
+  .report-root .badge.normal { background: var(--rp-normal-bg); color: #047857; border: 1px solid #a7f3d0; }
+
+  .report-root .module-tag { display: inline-block; font-size: 11px; font-weight: 500; padding: 2px 8px; border-radius: 6px; background: var(--rp-module-tag); color: var(--rp-module-text); margin-right: 4px; }
+
+  .report-root .module-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin-bottom: 32px; }
+  .report-root .module-card { background: var(--rp-card); border-radius: 10px; padding: 14px 18px; border: 1px solid var(--rp-border); display: flex; justify-content: space-between; align-items: center; }
+  .report-root .module-card .mod-name { font-size: 14px; font-weight: 500; }
+  .report-root .module-card .mod-count { font-size: 22px; font-weight: 700; color: var(--rp-primary); }
+
+  .report-root .issues-table { width: 100%; border-collapse: collapse; background: var(--rp-card); border-radius: 12px; overflow: hidden; border: 1px solid var(--rp-border); margin-bottom: 32px; }
+  .report-root .issues-table thead { background: #f9fafb; }
+  .report-root .issues-table th { text-align: left; padding: 12px 16px; font-size: 12px; font-weight: 600; color: var(--rp-muted); text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 1px solid var(--rp-border); }
+  .report-root .issues-table td { padding: 12px 16px; font-size: 13px; border-bottom: 1px solid #f3f4f6; vertical-align: top; }
+  .report-root .issues-table tr:last-child td { border-bottom: none; }
+  .report-root .issues-table tr:hover { background: #f9fafb; }
+  .report-root .issue-title { font-weight: 500; margin-bottom: 2px; }
+  .report-root .issue-desc { color: var(--rp-muted); font-size: 12px; }
+  .report-root .source-tag { font-size: 11px; color: var(--rp-muted); }
+
+  .report-root details { margin-bottom: 2px; }
+  .report-root details summary { cursor: pointer; color: var(--rp-primary); font-size: 12px; font-weight: 500; }
+  .report-root details .detail-content { padding: 8px 0 4px 0; font-size: 12px; color: var(--rp-muted); }
+
+  .report-root .client-section { background: var(--rp-card); border-radius: 12px; border: 1px solid var(--rp-border); padding: 24px; margin-bottom: 20px; }
+  .report-root .client-name { font-size: 18px; font-weight: 600; margin-bottom: 4px; }
+  .report-root .client-meta { font-size: 13px; color: var(--rp-muted); margin-bottom: 16px; }
+  .report-root .client-issue { padding: 14px 0; border-bottom: 1px solid #f3f4f6; }
+  .report-root .client-issue:last-child { border-bottom: none; }
+  .report-root .client-issue h4 { font-size: 14px; font-weight: 600; margin-bottom: 6px; }
+  .report-root .rec-box { background: #f0fdf4; border-left: 3px solid var(--rp-normal); padding: 10px 14px; border-radius: 0 8px 8px 0; margin-top: 8px; font-size: 12px; }
+  .report-root .cause-box { background: #fefce8; border-left: 3px solid var(--rp-attention); padding: 10px 14px; border-radius: 0 8px 8px 0; margin-top: 8px; font-size: 12px; }
+  .report-root .divider { border: none; border-top: 1px solid var(--rp-border); margin: 24px 0; }
+  @media (max-width: 768px) {
+    .report-root { padding: 12px; }
+    .report-root .overview-grid { grid-template-columns: repeat(2, 1fr); }
+    .report-root .module-grid { grid-template-columns: 1fr; }
+    .report-root .issues-table { font-size: 12px; }
+  }
+</style>
+</head>
+<body>
+
+<nav class="top-nav">
+  <div class="nav-left">
+    <div class="nav-logo">B</div>
+    <span class="nav-title">Boom Ops</span>
+  </div>
+  <div class="nav-right">
+    <span class="nav-user" id="nav-user"></span>
+    <span class="role-badge" id="role-badge"></span>
+    <a href="/logout" class="logout-btn">Log out</a>
+  </div>
+</nav>
+
+<div class="layout">
+  <div class="sidebar" id="sidebar">
+    <div class="sidebar-toggle">
+      <button class="sidebar-toggle-btn" onclick="toggleSidebar()" id="toggle-btn">◀</button>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-section-label">Reports</div>
+      <a href="/" class="sidebar-item">
+        <span class="sidebar-item-icon">📊</span>
+        <span class="sidebar-item-text">CSM Report</span>
+      </a>
+      <a href="/migration" class="sidebar-item">
+        <span class="sidebar-item-icon">🔄</span>
+        <span class="sidebar-item-text">Migration Daily</span>
+      </a>
+      <a href="/weekly-report" class="sidebar-item active">
+        <span class="sidebar-item-icon">📋</span>
+        <span class="sidebar-item-text">Weekly COO Report</span>
+      </a>
+    </div>
+  </div>
+
+  <div class="main-content">
+    <div class="report-root">
+      <div class="container">
+<!-- HEADER -->
+<h1>Weekly COO Report</h1>
+<p class="subtitle">Week of February 12 – 18, 2026 (Thu–Wed) &nbsp;|&nbsp; Generated on Feb 17, 2026</p>
+
+<!-- ============================================================ -->
+<!-- SECTION 1: OVERVIEW NUMBERS -->
+<!-- ============================================================ -->
+<div class="section-title">Overview</div>
+<div class="overview-grid">
+  <div class="stat-card intercom">
+    <div class="number">38</div>
+    <div class="label">Intercom Issues</div>
+  </div>
+  <div class="stat-card migration">
+    <div class="number">14</div>
+    <div class="label">Migration Issues (Slack)</div>
+  </div>
+  <div class="stat-card support">
+    <div class="number">16</div>
+    <div class="label">Support Issues (Slack)</div>
+  </div>
+  <div class="stat-card" style="border-left:4px solid #111827;">
+    <div class="number">68</div>
+    <div class="label">Total Issues This Week</div>
+  </div>
+  <div class="stat-card critical">
+    <div class="number">9</div>
+    <div class="label">Critical</div>
+  </div>
+  <div class="stat-card attention">
+    <div class="number">22</div>
+    <div class="label">Needs Attention</div>
+  </div>
+  <div class="stat-card normal">
+    <div class="number">37</div>
+    <div class="label">Normal</div>
+  </div>
+  <div class="stat-card" style="border-left:4px solid #7c3aed;">
+    <div class="number">20</div>
+    <div class="label">Prev. Week Pending</div>
+  </div>
+  <div class="stat-card" style="border-left:4px solid #dc2626;">
+    <div class="number">34</div>
+    <div class="label">Carry Over → Next Week</div>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- SECTION 2: REPORTS PER MODULE -->
+<!-- ============================================================ -->
+<div class="section-title">Reports by Module</div>
+<div class="module-grid">
+  <div class="module-card"><span class="mod-name">Channel Manager / OTA</span><span class="mod-count">14</span></div>
+  <div class="module-card"><span class="mod-name">CRM / Messaging</span><span class="mod-count">10</span></div>
+  <div class="module-card"><span class="mod-name">Operations / Tasks</span><span class="mod-count">9</span></div>
+  <div class="module-card"><span class="mod-name">Pricing &amp; Financials</span><span class="mod-count">9</span></div>
+  <div class="module-card"><span class="mod-name">Calendar &amp; Availability</span><span class="mod-count">7</span></div>
+  <div class="module-card"><span class="mod-name">Payments</span><span class="mod-count">6</span></div>
+  <div class="module-card"><span class="mod-name">Guest Portal</span><span class="mod-count">4</span></div>
+  <div class="module-card"><span class="mod-name">Reporting &amp; Analytics</span><span class="mod-count">5</span></div>
+  <div class="module-card"><span class="mod-name">Integrations / API</span><span class="mod-count">4</span></div>
+</div>
+
+
+<!-- ============================================================ -->
+<!-- SECTION: PREVIOUS WEEK PENDING ISSUES -->
+<!-- ============================================================ -->
+<div class="section-title" style="border-bottom-color:#7c3aed;">📋 Previous Week Pending Issues (Feb 5–11)</div>
+<p style="font-size:13px;color:var(--rp-muted);margin-bottom:8px;">The following <strong>20 issues</strong> from the previous week (Feb 5–11, Thu–Wed) remained unresolved going into this reporting period. These are separate from the 57 new issues tracked this week.</p>
+<p style="font-size:12px;color:var(--rp-muted);margin-bottom:16px;">🔴 4 Critical &nbsp;&middot;&nbsp; 🟡 8 Needs Attention &nbsp;&middot;&nbsp; ⚪ 8 Normal</p>
+
+<table class="issues-table">
+<thead>
+  <tr>
+    <th style="width:3%">#</th>
+    <th style="width:24%">Issue</th>
+    <th style="width:12%">Client</th>
+    <th style="width:12%">Module</th>
+    <th style="width:10%">Priority</th>
+    <th style="width:9%">Status</th>
+    <th style="width:10%">Link</th>
+    <th style="width:10%">GitHub / RU</th>
+  </tr>
+</thead>
+<tbody>
+  <tr>
+    <td>1</td>
+    <td><div class="issue-title">VRBO price markup stopped working — low-priced reservations coming through</div></td>
+    <td>More Than Stays</td>
+    <td><span class="module-tag">Rentals United</span></td>
+    <td><span style="display:inline-block;font-size:11px;font-weight:600;padding:2px 10px;border-radius:999px;letter-spacing:0.5px;background:#fef2f2; color:#dc2626; border:1px solid #fecaca;">Critical</span></td>
+    <td><span style="display:inline-block;font-size:11px;font-weight:600;padding:2px 10px;border-radius:999px;letter-spacing:0.5px;background:#eff6ff; color:#1d4ed8; border:1px solid #bfdbfe;">In Progress</span></td>
+    <td><a href="https://app.intercom.com/a/apps/rjv8g8a2/conversations/215472981557048" target="_blank" style="color:#6366f1;font-size:11px;">Intercom</a></td>
+    <td><span style="font-size:11px;color:#7c3aed;">RU #344585</span></td>
+  </tr>
+  <tr>
+    <td>2</td>
+    <td><div class="issue-title">Airbnb cancelled booking still showing as active reservation</div></td>
+    <td>Designed VR / Casiola</td>
+    <td><span class="module-tag">Rentals United</span></td>
+    <td><span style="display:inline-block;font-size:11px;font-weight:600;padding:2px 10px;border-radius:999px;letter-spacing:0.5px;background:#fef2f2; color:#dc2626; border:1px solid #fecaca;">Critical</span></td>
+    <td><span style="display:inline-block;font-size:11px;font-weight:600;padding:2px 10px;border-radius:999px;letter-spacing:0.5px;background:#eff6ff; color:#1d4ed8; border:1px solid #bfdbfe;">In Progress</span></td>
+    <td><a href="https://app.intercom.com/a/apps/rjv8g8a2/conversations/215472967441142" target="_blank" style="color:#6366f1;font-size:11px;">Intercom</a></td>
+    <td><span style="font-size:11px;color:#7c3aed;">RU #344499</span></td>
+  </tr>
+  <tr>
+    <td>3</td>
+    <td><div class="issue-title">Duplicated reservations on calendar from Booking.com</div></td>
+    <td>Aliyah Homes / Oaktree</td>
+    <td><span class="module-tag">Rentals United</span></td>
+    <td><span style="display:inline-block;font-size:11px;font-weight:600;padding:2px 10px;border-radius:999px;letter-spacing:0.5px;background:#fef2f2; color:#dc2626; border:1px solid #fecaca;">Critical</span></td>
+    <td><span style="display:inline-block;font-size:11px;font-weight:600;padding:2px 10px;border-radius:999px;letter-spacing:0.5px;background:#eff6ff; color:#1d4ed8; border:1px solid #bfdbfe;">In Progress</span></td>
+    <td><a href="https://app.intercom.com/a/apps/rjv8g8a2/conversations/215472987367847" target="_blank" style="color:#6366f1;font-size:11px;">Intercom</a></td>
+    <td><span style="font-size:11px;color:#7c3aed;">RU #345062</span></td>
+  </tr>
+  <tr>
+    <td>4</td>
+    <td><div class="issue-title">Tax calculated twice (VAT + TAX) on reservation — reopened 2x</div></td>
+    <td>Port City Haifa</td>
+    <td><span class="module-tag">Financials</span></td>
+    <td><span style="display:inline-block;font-size:11px;font-weight:600;padding:2px 10px;border-radius:999px;letter-spacing:0.5px;background:#fef2f2; color:#dc2626; border:1px solid #fecaca;">Critical</span></td>
+    <td><span style="display:inline-block;font-size:11px;font-weight:600;padding:2px 10px;border-radius:999px;letter-spacing:0.5px;background:#fffbeb; color:#b45309; border:1px solid #fde68a;">Open</span></td>
+    <td><a href="https://app.intercom.com/a/apps/rjv8g8a2/conversations/215473019881882" target="_blank" style="color:#6366f1;font-size:11px;">Intercom</a></td>
+    <td><span style="color:var(--rp-muted);font-size:11px;">—</span></td>
+  </tr>
+  <tr>
+    <td>5</td>
+    <td><div class="issue-title">Guest portal showing payment required when nothing is owed</div></td>
+    <td>Smith and Adams</td>
+    <td><span class="module-tag">Guest Portal</span></td>
+    <td><span style="display:inline-block;font-size:11px;font-weight:600;padding:2px 10px;border-radius:999px;letter-spacing:0.5px;background:#fffbeb; color:#b45309; border:1px solid #fde68a;">Needs Attention</span></td>
+    <td><span style="display:inline-block;font-size:11px;font-weight:600;padding:2px 10px;border-radius:999px;letter-spacing:0.5px;background:#fffbeb; color:#b45309; border:1px solid #fde68a;">Open</span></td>
+    <td><a href="https://app.intercom.com/a/apps/rjv8g8a2/conversations/215472987542640" target="_blank" style="color:#6366f1;font-size:11px;">Intercom</a></td>
+    <td><a href="https://github.com/designedvr/designedvr/issues/13655" target="_blank" style="color:var(--rp-primary);font-size:11px;">#13655</a></td>
+  </tr>
+  <tr>
+    <td>6</td>
+    <td><div class="issue-title">Nuki door code duplicated or not created for guest</div></td>
+    <td>Smith and Adams</td>
+    <td><span class="module-tag">Smart Locks</span></td>
+    <td><span style="display:inline-block;font-size:11px;font-weight:600;padding:2px 10px;border-radius:999px;letter-spacing:0.5px;background:#fffbeb; color:#b45309; border:1px solid #fde68a;">Needs Attention</span></td>
+    <td><span style="display:inline-block;font-size:11px;font-weight:600;padding:2px 10px;border-radius:999px;letter-spacing:0.5px;background:#fffbeb; color:#b45309; border:1px solid #fde68a;">Open</span></td>
+    <td><a href="https://app.intercom.com/a/apps/rjv8g8a2/conversations/215473014986766" target="_blank" style="color:#6366f1;font-size:11px;">Intercom</a></td>
+    <td><a href="https://github.com/designedvr/designedvr/issues/13740" target="_blank" style="color:var(--rp-primary);font-size:11px;">#13740</a></td>
+  </tr>
+  <tr>
+    <td>7</td>
+    <td><div class="issue-title">Finnish translation missing + small pictures being deleted</div></td>
+    <td>2ndhomes</td>
+    <td><span class="module-tag">Localization / CRM</span></td>
+    <td><span style="display:inline-block;font-size:11px;font-weight:600;padding:2px 10px;border-radius:999px;letter-spacing:0.5px;background:#fffbeb; color:#b45309; border:1px solid #fde68a;">Needs Attention</span></td>
+    <td><span style="display:inline-block;font-size:11px;font-weight:600;padding:2px 10px;border-radius:999px;letter-spacing:0.5px;background:#fffbeb; color:#b45309; border:1px solid #fde68a;">Open</span></td>
+    <td><a href="https://app.intercom.com/a/apps/rjv8g8a2/conversations/215472975239053" target="_blank" style="color:#6366f1;font-size:11px;">Intercom</a></td>
+    <td><a href="https://github.com/designedvr/designedvr/issues/13629" target="_blank" style="color:var(--rp-primary);font-size:11px;">#13629</a></td>
+  </tr>
+  <tr>
+    <td>8</td>
+    <td><div class="issue-title">Sales CRM email inquiries cannot be closed — workflow blocked</div></td>
+    <td>CTHA</td>
+    <td><span class="module-tag">CRM</span></td>
+    <td><span style="display:inline-block;font-size:11px;font-weight:600;padding:2px 10px;border-radius:999px;letter-spacing:0.5px;background:#fffbeb; color:#b45309; border:1px solid #fde68a;">Needs Attention</span></td>
+    <td><span style="display:inline-block;font-size:11px;font-weight:600;padding:2px 10px;border-radius:999px;letter-spacing:0.5px;background:#fffbeb; color:#b45309; border:1px solid #fde68a;">Open</span></td>
+    <td><a href="https://app.intercom.com/a/apps/rjv8g8a2/conversations/215472959247720" target="_blank" style="color:#6366f1;font-size:11px;">Intercom</a></td>
+    <td><span style="color:var(--rp-muted);font-size:11px;">—</span></td>
+  </tr>
+  <tr>
+    <td>9</td>
+    <td><div class="issue-title">Custom domain setup not working for guest portal</div></td>
+    <td>More Than Stays</td>
+    <td><span class="module-tag">Website</span></td>
+    <td><span style="display:inline-block;font-size:11px;font-weight:600;padding:2px 10px;border-radius:999px;letter-spacing:0.5px;background:#fffbeb; color:#b45309; border:1px solid #fde68a;">Needs Attention</span></td>
+    <td><span style="display:inline-block;font-size:11px;font-weight:600;padding:2px 10px;border-radius:999px;letter-spacing:0.5px;background:#fffbeb; color:#b45309; border:1px solid #fde68a;">Open</span></td>
+    <td><a href="https://app.intercom.com/a/apps/rjv8g8a2/conversations/215472982592965" target="_blank" style="color:#6366f1;font-size:11px;">Intercom</a></td>
+    <td><span style="color:var(--rp-muted);font-size:11px;">—</span></td>
+  </tr>
+  <tr>
+    <td>10</td>
+    <td><div class="issue-title">Remap listing to a different Booking.com profile</div></td>
+    <td>2ndhomes</td>
+    <td><span class="module-tag">Channel Manager</span></td>
+    <td><span style="display:inline-block;font-size:11px;font-weight:600;padding:2px 10px;border-radius:999px;letter-spacing:0.5px;background:#fffbeb; color:#b45309; border:1px solid #fde68a;">Needs Attention</span></td>
+    <td><span style="display:inline-block;font-size:11px;font-weight:600;padding:2px 10px;border-radius:999px;letter-spacing:0.5px;background:#fffbeb; color:#b45309; border:1px solid #fde68a;">Open</span></td>
+    <td><a href="https://app.intercom.com/a/apps/rjv8g8a2/conversations/215472973562852" target="_blank" style="color:#6366f1;font-size:11px;">Intercom</a></td>
+    <td><span style="color:var(--rp-muted);font-size:11px;">—</span></td>
+  </tr>
+  <tr>
+    <td>11</td>
+    <td><div class="issue-title">Automated message setup issues — screen recording provided</div></td>
+    <td>Happiness (Quinn)</td>
+    <td><span class="module-tag">Messaging</span></td>
+    <td><span style="display:inline-block;font-size:11px;font-weight:600;padding:2px 10px;border-radius:999px;letter-spacing:0.5px;background:#fffbeb; color:#b45309; border:1px solid #fde68a;">Needs Attention</span></td>
+    <td><span style="display:inline-block;font-size:11px;font-weight:600;padding:2px 10px;border-radius:999px;letter-spacing:0.5px;background:#fffbeb; color:#b45309; border:1px solid #fde68a;">Open</span></td>
+    <td><a href="https://app.intercom.com/a/apps/rjv8g8a2/conversations/215473070033874" target="_blank" style="color:#6366f1;font-size:11px;">Intercom</a></td>
+    <td><span style="color:var(--rp-muted);font-size:11px;">—</span></td>
+  </tr>
+  <tr>
+    <td>12</td>
+    <td><div class="issue-title">Messages not being received from reservations</div></td>
+    <td>WeHomes (Renata)</td>
+    <td><span class="module-tag">Messaging</span></td>
+    <td><span style="display:inline-block;font-size:11px;font-weight:600;padding:2px 10px;border-radius:999px;letter-spacing:0.5px;background:#fffbeb; color:#b45309; border:1px solid #fde68a;">Needs Attention</span></td>
+    <td><span style="display:inline-block;font-size:11px;font-weight:600;padding:2px 10px;border-radius:999px;letter-spacing:0.5px;background:#faf5ff; color:#7c3aed; border:1px solid #ddd6fe;">Snoozed</span></td>
+    <td><a href="https://app.intercom.com/a/apps/rjv8g8a2/conversations/215472945173686" target="_blank" style="color:#6366f1;font-size:11px;">Intercom</a></td>
+    <td><span style="color:var(--rp-muted);font-size:11px;">—</span></td>
+  </tr>
+  <tr>
+    <td>13</td>
+    <td><div class="issue-title">Material costs not showing in P&L report</div></td>
+    <td>Dwell PropMan</td>
+    <td><span class="module-tag">Financials</span></td>
+    <td><span style="display:inline-block;font-size:11px;font-weight:600;padding:2px 10px;border-radius:999px;letter-spacing:0.5px;background:#ecfdf5; color:#047857; border:1px solid #a7f3d0;">Normal</span></td>
+    <td><span style="display:inline-block;font-size:11px;font-weight:600;padding:2px 10px;border-radius:999px;letter-spacing:0.5px;background:#fffbeb; color:#b45309; border:1px solid #fde68a;">Open</span></td>
+    <td><a href="https://app.intercom.com/a/apps/rjv8g8a2/conversations/215473021136828" target="_blank" style="color:#6366f1;font-size:11px;">Intercom</a></td>
+    <td><span style="color:var(--rp-muted);font-size:11px;">—</span></td>
+  </tr>
+  <tr>
+    <td>14</td>
+    <td><div class="issue-title">Multiple questions document (PDF) — various pending items</div></td>
+    <td>Smith and Adams</td>
+    <td><span class="module-tag">General</span></td>
+    <td><span style="display:inline-block;font-size:11px;font-weight:600;padding:2px 10px;border-radius:999px;letter-spacing:0.5px;background:#ecfdf5; color:#047857; border:1px solid #a7f3d0;">Normal</span></td>
+    <td><span style="display:inline-block;font-size:11px;font-weight:600;padding:2px 10px;border-radius:999px;letter-spacing:0.5px;background:#fffbeb; color:#b45309; border:1px solid #fde68a;">Open</span></td>
+    <td><a href="https://app.intercom.com/a/apps/rjv8g8a2/conversations/215472978226570" target="_blank" style="color:#6366f1;font-size:11px;">Intercom</a></td>
+    <td><span style="color:var(--rp-muted);font-size:11px;">—</span></td>
+  </tr>
+  <tr>
+    <td>15</td>
+    <td><div class="issue-title">Cleaners need larger calendar view for scheduling</div></td>
+    <td>(Feature Request)</td>
+    <td><span class="module-tag">Tasks / Cleaning</span></td>
+    <td><span style="display:inline-block;font-size:11px;font-weight:600;padding:2px 10px;border-radius:999px;letter-spacing:0.5px;background:#ecfdf5; color:#047857; border:1px solid #a7f3d0;">Normal</span></td>
+    <td><span style="display:inline-block;font-size:11px;font-weight:600;padding:2px 10px;border-radius:999px;letter-spacing:0.5px;background:#fffbeb; color:#b45309; border:1px solid #fde68a;">Open</span></td>
+    <td><a href="https://app.intercom.com/a/apps/rjv8g8a2/conversations/215473018886541" target="_blank" style="color:#6366f1;font-size:11px;">Intercom</a></td>
+    <td><span style="color:var(--rp-muted);font-size:11px;">—</span></td>
+  </tr>
+  <tr>
+    <td>16</td>
+    <td><div class="issue-title">CRM issue during migration — data inconsistency</div></td>
+    <td>Verano Property</td>
+    <td><span class="module-tag">CRM</span></td>
+    <td><span style="display:inline-block;font-size:11px;font-weight:600;padding:2px 10px;border-radius:999px;letter-spacing:0.5px;background:#ecfdf5; color:#047857; border:1px solid #a7f3d0;">Normal</span></td>
+    <td><span style="display:inline-block;font-size:11px;font-weight:600;padding:2px 10px;border-radius:999px;letter-spacing:0.5px;background:#faf5ff; color:#7c3aed; border:1px solid #ddd6fe;">Snoozed</span></td>
+    <td><a href="https://app.intercom.com/a/apps/rjv8g8a2/conversations/215473002687686" target="_blank" style="color:#6366f1;font-size:11px;">Intercom</a></td>
+    <td><span style="color:var(--rp-muted);font-size:11px;">—</span></td>
+  </tr>
+  <tr>
+    <td>17</td>
+    <td><div class="issue-title">Cancelled Booking.com reservation still showing on calendar</div></td>
+    <td>Smith and Adams</td>
+    <td><span class="module-tag">Rentals United</span></td>
+    <td><span style="display:inline-block;font-size:11px;font-weight:600;padding:2px 10px;border-radius:999px;letter-spacing:0.5px;background:#ecfdf5; color:#047857; border:1px solid #a7f3d0;">Normal</span></td>
+    <td><span style="display:inline-block;font-size:11px;font-weight:600;padding:2px 10px;border-radius:999px;letter-spacing:0.5px;background:#faf5ff; color:#7c3aed; border:1px solid #ddd6fe;">Snoozed</span></td>
+    <td><a href="https://app.intercom.com/a/apps/rjv8g8a2/conversations/215473003931162" target="_blank" style="color:#6366f1;font-size:11px;">Intercom</a></td>
+    <td><span style="color:var(--rp-muted);font-size:11px;">—</span></td>
+  </tr>
+  <tr>
+    <td>18</td>
+    <td><div class="issue-title">Users not being notified of new reservations</div></td>
+    <td>(Unknown)</td>
+    <td><span class="module-tag">Notifications</span></td>
+    <td><span style="display:inline-block;font-size:11px;font-weight:600;padding:2px 10px;border-radius:999px;letter-spacing:0.5px;background:#ecfdf5; color:#047857; border:1px solid #a7f3d0;">Normal</span></td>
+    <td><span style="display:inline-block;font-size:11px;font-weight:600;padding:2px 10px;border-radius:999px;letter-spacing:0.5px;background:#faf5ff; color:#7c3aed; border:1px solid #ddd6fe;">Snoozed</span></td>
+    <td><a href="https://app.intercom.com/a/apps/rjv8g8a2/conversations/215472973355711" target="_blank" style="color:#6366f1;font-size:11px;">Intercom</a></td>
+    <td><span style="color:var(--rp-muted);font-size:11px;">—</span></td>
+  </tr>
+  <tr>
+    <td>19</td>
+    <td><div class="issue-title">Booking.com cleaning fee currency conversion issue</div></td>
+    <td>SeanRent (Son)</td>
+    <td><span class="module-tag">Channel Manager</span></td>
+    <td><span style="display:inline-block;font-size:11px;font-weight:600;padding:2px 10px;border-radius:999px;letter-spacing:0.5px;background:#ecfdf5; color:#047857; border:1px solid #a7f3d0;">Normal</span></td>
+    <td><span style="display:inline-block;font-size:11px;font-weight:600;padding:2px 10px;border-radius:999px;letter-spacing:0.5px;background:#fffbeb; color:#b45309; border:1px solid #fde68a;">Open</span></td>
+    <td><a href="https://app.intercom.com/a/apps/rjv8g8a2/conversations/215472971718121" target="_blank" style="color:#6366f1;font-size:11px;">Intercom</a></td>
+    <td><span style="color:var(--rp-muted);font-size:11px;">—</span></td>
+  </tr>
+  <tr>
+    <td>20</td>
+    <td><div class="issue-title">Channel reviews stopped pulling from Airbnb and Booking.com</div></td>
+    <td>NOX</td>
+    <td><span class="module-tag">Channel Manager</span></td>
+    <td><span style="display:inline-block;font-size:11px;font-weight:600;padding:2px 10px;border-radius:999px;letter-spacing:0.5px;background:#ecfdf5; color:#047857; border:1px solid #a7f3d0;">Normal</span></td>
+    <td><span style="display:inline-block;font-size:11px;font-weight:600;padding:2px 10px;border-radius:999px;letter-spacing:0.5px;background:#fffbeb; color:#b45309; border:1px solid #fde68a;">Open</span></td>
+    <td><span style="font-size:11px;color:var(--rp-muted);">Slack (#support-nox)</span></td>
+    <td><span style="color:var(--rp-muted);font-size:11px;">—</span></td>
+  </tr>
+</tbody>
+</table>
+
+<div style="background:var(--rp-card);border-radius:12px;border:1px solid var(--rp-border);padding:16px 20px;margin-bottom:32px;margin-top:16px;">
+  <p style="font-size:13px;color:var(--rp-muted);margin:0;"><strong>Note:</strong> Some of these issues may overlap with or have been re-reported in the current week's list. Issues marked "Snoozed" are paused pending client response or a scheduled follow-up. Issues with RU (Rentals United) tickets are waiting on third-party resolution.</p>
+</div>
+
+<!-- ============================================================ -->
+<!-- SECTION 3: ISSUES LIST -->
+<!-- ============================================================ -->
+<div class="section-title">All Issues This Week</div>
+<table class="issues-table">
+<thead>
+  <tr>
+    <th style="width:3%">#</th>
+    <th style="width:18%">Issue</th>
+    <th style="width:9%">Client</th>
+    <th style="width:10%">Module</th>
+    <th style="width:7%">Priority</th>
+    <th style="width:6%">Source</th>
+    <th style="width:4%">Link</th>
+    <th style="width:6%">GitHub</th>
+    <th style="width:8%">Status</th>
+    <th style="width:29%">Details</th>
+  </tr>
+</thead>
+<tbody>
+
+<!-- CRITICAL ISSUES -->
+<tr>
+  <td>1</td>
+  <td><span class="issue-title">AI auto-bouncing service calls despite being turned off</span><br><span class="issue-desc">AI CS auto-bouncing service calls on its own overriding TC settings — open since Dec, causing missed tasks and lost bookings</span></td>
+  <td>NOX</td>
+  <td><span class="module-tag">Operations / Tasks</span></td>
+  <td><span class="badge critical">Critical</span></td>
+  <td><span class="source-tag">Slack Support</span></td>
+  <td><a href="https://boomnoworkspace.slack.com/archives/C063ULDC3M0/p1770998922283779" target="_blank" style="color:var(--rp-primary);font-size:12px;">View&nbsp;↗</a></td>
+  <td style="color:var(--rp-muted);font-size:12px;text-align:center;">—</td>
+  <td><span style="display:inline-block;font-size:11px;font-weight:600;padding:2px 10px;border-radius:999px;letter-spacing:0.5px;background:#fffbeb; color:#b45309; border:1px solid #fde68a;">Open</span><span style="display:inline-block;font-size:9px;font-weight:700;padding:1px 6px;border-radius:4px;background:#fef2f2;color:#dc2626;border:1px solid #fecaca;margin-left:4px;vertical-align:middle;">↻ NEXT WEEK</span></td>
+  <td><details><summary>View details</summary><div class="detail-content">Ticket #63845703 open since December. AI creating and auto-bouncing service calls despite the feature being disabled. Causing tasks to appear new when they're overdue. Maintenance team missing daily tasks. Already caused a lost 2-night booking. Weekly follow-ups since Dec with no resolution.</div></details></td>
+</tr>
+<tr>
+  <td>2</td>
+  <td><span class="issue-title">Multi-calendar not showing properties</span><br><span class="issue-desc">Multi-calendar view displays no properties — blocking daily operations</span></td>
+  <td>Eason Stays</td>
+  <td><span class="module-tag">Calendar &amp; Availability</span></td>
+  <td><span class="badge critical">Critical</span></td>
+  <td><span class="source-tag">Slack Support</span></td>
+  <td><a href="https://boomnoworkspace.slack.com/archives/C09JR9U8VL6/p1770807834377029" target="_blank" style="color:var(--rp-primary);font-size:12px;">View&nbsp;↗</a></td>
+  <td style="color:var(--rp-muted);font-size:12px;text-align:center;">—</td>
+  <td><span style="display:inline-block;font-size:11px;font-weight:600;padding:2px 10px;border-radius:999px;letter-spacing:0.5px;background:#fffbeb; color:#b45309; border:1px solid #fde68a;">Open</span><span style="display:inline-block;font-size:9px;font-weight:700;padding:1px 6px;border-radius:4px;background:#fef2f2;color:#dc2626;border:1px solid #fecaca;margin-left:4px;vertical-align:middle;">↻ NEXT WEEK</span></td>
+  <td><details><summary>View details</summary><div class="detail-content">Multi-calendar page loads but shows zero properties. Flagged as URGENT by client. Core operational tool for managing availability, blocking operations company-wide.</div></details></td>
+</tr>
+<tr>
+  <td>3</td>
+  <td><span class="issue-title">Pricing API returning 500 errors</span><br><span class="issue-desc">API 500 error when accessing pricing data, preventing rate management</span></td>
+  <td>Eden Villas Miami</td>
+  <td><span class="module-tag">Integrations / API</span></td>
+  <td><span class="badge critical">Critical</span></td>
+  <td><span class="source-tag">Intercom</span></td>
+  <td><a href="https://app.intercom.com/a/apps/rjv8g8a2/conversations/215473049161981" target="_blank" style="color:var(--rp-primary);font-size:12px;">View&nbsp;↗</a></td>
+  <td style="color:var(--rp-muted);font-size:12px;text-align:center;">—</td>
+  <td><span style="display:inline-block;font-size:11px;font-weight:600;padding:2px 10px;border-radius:999px;letter-spacing:0.5px;background:#fffbeb; color:#b45309; border:1px solid #fde68a;">Open</span><span style="display:inline-block;font-size:9px;font-weight:700;padding:1px 6px;border-radius:4px;background:#fef2f2;color:#dc2626;border:1px solid #fecaca;margin-left:4px;vertical-align:middle;">↻ NEXT WEEK</span></td>
+  <td><details><summary>View details</summary><div class="detail-content">Pricing API returning HTTP 500 server errors. Client unable to manage or update pricing. Revenue-impacting as rates cannot be adjusted.</div></details></td>
+</tr>
+<tr>
+  <td>4</td>
+  <td><span class="issue-title">VRBO messages not received through Boom</span><br><span class="issue-desc">Guest messages from VRBO channel not appearing in Boom inbox</span></td>
+  <td>Designed VR</td>
+  <td><span class="module-tag">Channel Manager / OTA</span></td>
+  <td><span class="badge critical">Critical</span></td>
+  <td><span class="source-tag">Intercom</span></td>
+  <td><a href="https://app.intercom.com/a/apps/rjv8g8a2/conversations/215473106767055" target="_blank" style="color:var(--rp-primary);font-size:12px;">View&nbsp;↗</a></td>
+  <td style="color:var(--rp-muted);font-size:12px;text-align:center;">—</td>
+  <td><span style="display:inline-block;font-size:11px;font-weight:600;padding:2px 10px;border-radius:999px;letter-spacing:0.5px;background:#ecfdf5; color:#047857; border:1px solid #a7f3d0;">Resolved</span></td>
+  <td><details><summary>View details</summary><div class="detail-content">Guest messages sent through VRBO are not being delivered into the Boom CRM/inbox. Causing missed guest communications and potential booking issues.</div></details></td>
+</tr>
+<tr>
+  <td>5</td>
+  <td><span class="issue-title">Calendar blocked unexpectedly</span><br><span class="issue-desc">Calendar dates getting blocked without user action, preventing bookings</span></td>
+  <td>Designed VR</td>
+  <td><span class="module-tag">Calendar &amp; Availability</span></td>
+  <td><span class="badge critical">Critical</span></td>
+  <td><span class="source-tag">Intercom</span></td>
+  <td><a href="https://app.intercom.com/a/apps/rjv8g8a2/conversations/215473098243777" target="_blank" style="color:var(--rp-primary);font-size:12px;">View&nbsp;↗</a></td>
+  <td style="color:var(--rp-muted);font-size:12px;text-align:center;">—</td>
+  <td><span style="display:inline-block;font-size:11px;font-weight:600;padding:2px 10px;border-radius:999px;letter-spacing:0.5px;background:#ecfdf5; color:#047857; border:1px solid #a7f3d0;">Resolved</span></td>
+  <td><details><summary>View details</summary><div class="detail-content">Calendar dates are being blocked automatically without manual action from the client. This prevents bookings for those dates and directly impacts revenue.</div></details></td>
+</tr>
+<tr>
+  <td>6</td>
+  <td><span class="issue-title">Marriott reservation not appearing in Boom</span><br><span class="issue-desc">Reservation from Marriott via Rental United not syncing to Boom</span></td>
+  <td>Aliyah Homes</td>
+  <td><span class="module-tag">Channel Manager / OTA</span></td>
+  <td><span class="badge critical">Critical</span></td>
+  <td><span class="source-tag">Slack Support</span></td>
+  <td><a href="https://boomnoworkspace.slack.com/archives/C09LM8SHR5G/p1771095756327409" target="_blank" style="color:var(--rp-primary);font-size:12px;">View&nbsp;↗</a></td>
+  <td style="color:var(--rp-muted);font-size:12px;text-align:center;">—</td>
+  <td><span style="display:inline-block;font-size:11px;font-weight:600;padding:2px 10px;border-radius:999px;letter-spacing:0.5px;background:#eff6ff; color:#1d4ed8; border:1px solid #bfdbfe;">In Progress</span><span style="display:inline-block;font-size:9px;font-weight:700;padding:1px 6px;border-radius:4px;background:#fef2f2;color:#dc2626;border:1px solid #fecaca;margin-left:4px;vertical-align:middle;">↻ NEXT WEEK</span></td>
+  <td><details><summary>View details</summary><div class="detail-content">Reservation made on Marriott through Rental United integration not appearing in Boom. Risk of double-booking if calendar not updated. Client had to manually manage the reservation.</div></details></td>
+</tr>
+<tr>
+  <td>7</td>
+  <td><span class="issue-title">Payment balance showing 0 on active bookings</span><br><span class="issue-desc">Reservation payments showing balance of 0 despite outstanding amounts</span></td>
+  <td>Meir Steinberg</td>
+  <td><span class="module-tag">Payments</span></td>
+  <td><span class="badge critical">Critical</span></td>
+  <td><span class="source-tag">Intercom</span></td>
+  <td><a href="https://app.intercom.com/a/apps/rjv8g8a2/conversations/215473110357073" target="_blank" style="color:var(--rp-primary);font-size:12px;">View&nbsp;↗</a></td>
+  <td style="color:var(--rp-muted);font-size:12px;text-align:center;">—</td>
+  <td><span style="display:inline-block;font-size:11px;font-weight:600;padding:2px 10px;border-radius:999px;letter-spacing:0.5px;background:#ecfdf5; color:#047857; border:1px solid #a7f3d0;">Resolved</span></td>
+  <td><details><summary>View details</summary><div class="detail-content">Payment system bug — balances showing 0 on bookings that have outstanding payment. Financial risk as charges may be missed.</div></details></td>
+</tr>
+<tr>
+  <td>8</td>
+  <td><span class="issue-title">Cleaning task auto-creating without reservations</span><br><span class="issue-desc">System creating cleaning tasks that are not linked to any reservation</span></td>
+  <td>Biz Flats</td>
+  <td><span class="module-tag">Operations / Tasks</span></td>
+  <td><span class="badge critical">Critical</span></td>
+  <td><span class="source-tag">Slack Migration</span></td>
+  <td><a href="https://boomnoworkspace.slack.com/archives/C0A12AQ7XHP/p1770725102631839" target="_blank" style="color:var(--rp-primary);font-size:12px;">View&nbsp;↗</a></td>
+  <td style="color:var(--rp-muted);font-size:12px;text-align:center;">—</td>
+  <td><span style="display:inline-block;font-size:11px;font-weight:600;padding:2px 10px;border-radius:999px;letter-spacing:0.5px;background:#fffbeb; color:#b45309; border:1px solid #fde68a;">Open</span><span style="display:inline-block;font-size:9px;font-weight:700;padding:1px 6px;border-radius:4px;background:#fef2f2;color:#dc2626;border:1px solid #fecaca;margin-left:4px;vertical-align:middle;">↻ NEXT WEEK</span></td>
+  <td><details><summary>View details</summary><div class="detail-content">Confirmed bug — cleaning tasks are being auto-generated without an associated reservation. Creates phantom work orders for the operations team and wastes resources.</div></details></td>
+</tr>
+<tr>
+  <td>9</td>
+  <td><span class="issue-title">Reservation not syncing after channel stop/start</span><br><span class="issue-desc">Reservations disappear or fail to sync after reactivating a channel connection</span></td>
+  <td>Yulia</td>
+  <td><span class="module-tag">Channel Manager / OTA</span></td>
+  <td><span class="badge critical">Critical</span></td>
+  <td><span class="source-tag">Intercom</span></td>
+  <td><a href="https://app.intercom.com/a/apps/rjv8g8a2/conversations/215473070423165" target="_blank" style="color:var(--rp-primary);font-size:12px;">View&nbsp;↗</a></td>
+  <td style="color:var(--rp-muted);font-size:12px;text-align:center;">—</td>
+  <td><span style="display:inline-block;font-size:11px;font-weight:600;padding:2px 10px;border-radius:999px;letter-spacing:0.5px;background:#fffbeb; color:#b45309; border:1px solid #fde68a;">Open</span><span style="display:inline-block;font-size:9px;font-weight:700;padding:1px 6px;border-radius:4px;background:#fef2f2;color:#dc2626;border:1px solid #fecaca;margin-left:4px;vertical-align:middle;">↻ NEXT WEEK</span></td>
+  <td><details><summary>View details</summary><div class="detail-content">After stopping and restarting a channel connection, existing reservations are not syncing back. Risk of double bookings and lost reservation data.</div></details></td>
+</tr>
+
+<!-- NEEDS ATTENTION -->
+<tr>
+  <td>10</td>
+  <td><span class="issue-title">Automated messages not sending</span><br><span class="issue-desc">Scheduled automated guest messages failing to deliver</span></td>
+  <td>Biz Flats</td>
+  <td><span class="module-tag">CRM / Messaging</span></td>
+  <td><span class="badge attention">Needs Attention</span></td>
+  <td><span class="source-tag">Slack Migration</span></td>
+  <td><a href="https://boomnoworkspace.slack.com/archives/C0A12AQ7XHP/p1771223081772339" target="_blank" style="color:var(--rp-primary);font-size:12px;">View&nbsp;↗</a></td>
+  <td style="color:var(--rp-muted);font-size:12px;text-align:center;">—</td>
+  <td><span style="display:inline-block;font-size:11px;font-weight:600;padding:2px 10px;border-radius:999px;letter-spacing:0.5px;background:#eff6ff; color:#1d4ed8; border:1px solid #bfdbfe;">In Progress</span><span style="display:inline-block;font-size:9px;font-weight:700;padding:1px 6px;border-radius:4px;background:#fef2f2;color:#dc2626;border:1px solid #fecaca;margin-left:4px;vertical-align:middle;">↻ NEXT WEEK</span></td>
+  <td><details><summary>View details</summary><div class="detail-content">Automated messages configured for guest communication are not being sent. Disrupts guest experience workflow and onboarding communications.</div></details></td>
+</tr>
+<tr>
+  <td>11</td>
+  <td><span class="issue-title">Booking.com payment showing unpaid</span><br><span class="issue-desc">BDC reservation payment status stuck on unpaid despite being received</span></td>
+  <td>Map Short Stays</td>
+  <td><span class="module-tag">Payments</span></td>
+  <td><span class="badge attention">Needs Attention</span></td>
+  <td><span class="source-tag">Slack Migration</span></td>
+  <td><a href="https://boomnoworkspace.slack.com/archives/C0A0MB7D4CE/p1771132720165299" target="_blank" style="color:var(--rp-primary);font-size:12px;">View&nbsp;↗</a></td>
+  <td style="color:var(--rp-muted);font-size:12px;text-align:center;">—</td>
+  <td><span style="display:inline-block;font-size:11px;font-weight:600;padding:2px 10px;border-radius:999px;letter-spacing:0.5px;background:#faf5ff; color:#7c3aed; border:1px solid #ddd6fe;">Investigating</span><span style="display:inline-block;font-size:9px;font-weight:700;padding:1px 6px;border-radius:4px;background:#fef2f2;color:#dc2626;border:1px solid #fecaca;margin-left:4px;vertical-align:middle;">↻ NEXT WEEK</span></td>
+  <td><details><summary>View details</summary><div class="detail-content">Booking.com reservation payment status displaying as unpaid in Boom even though payment has been received by BDC. Creates confusion in financial tracking.</div></details></td>
+</tr>
+<tr>
+  <td>12</td>
+  <td><span class="issue-title">Airbnb calendar not blocking dates after booking</span><br><span class="issue-desc">Calendar sync issue — Airbnb dates not blocked when booking is made elsewhere</span></td>
+  <td>Map Short Stays</td>
+  <td><span class="module-tag">Calendar &amp; Availability</span></td>
+  <td><span class="badge attention">Needs Attention</span></td>
+  <td><span class="source-tag">Slack Migration</span></td>
+  <td><a href="https://boomnoworkspace.slack.com/archives/C0A0MB7D4CE/p1770979033491239" target="_blank" style="color:var(--rp-primary);font-size:12px;">View&nbsp;↗</a></td>
+  <td style="color:var(--rp-muted);font-size:12px;text-align:center;">—</td>
+  <td><span style="display:inline-block;font-size:11px;font-weight:600;padding:2px 10px;border-radius:999px;letter-spacing:0.5px;background:#ecfdf5; color:#047857; border:1px solid #a7f3d0;">Resolved</span></td>
+  <td><details><summary>View details</summary><div class="detail-content">When a booking is made on another channel, Airbnb availability is not being blocked. Double booking risk until resolved.</div></details></td>
+</tr>
+<tr>
+  <td>13</td>
+  <td><span class="issue-title">VAT double calculation on invoices</span><br><span class="issue-desc">VAT being calculated twice on client invoices</span></td>
+  <td>Aliyah Homes</td>
+  <td><span class="module-tag">Pricing &amp; Financials</span></td>
+  <td><span class="badge attention">Needs Attention</span></td>
+  <td><span class="source-tag">Slack Support</span></td>
+  <td><a href="https://boomnoworkspace.slack.com/archives/C09LM8SHR5G/p1770887345599809" target="_blank" style="color:var(--rp-primary);font-size:12px;">View&nbsp;↗</a></td>
+  <td style="color:var(--rp-muted);font-size:12px;text-align:center;">—</td>
+  <td><span style="display:inline-block;font-size:11px;font-weight:600;padding:2px 10px;border-radius:999px;letter-spacing:0.5px;background:#fffbeb; color:#b45309; border:1px solid #fde68a;">Open</span><span style="display:inline-block;font-size:9px;font-weight:700;padding:1px 6px;border-radius:4px;background:#fef2f2;color:#dc2626;border:1px solid #fecaca;margin-left:4px;vertical-align:middle;">↻ NEXT WEEK</span></td>
+  <td><details><summary>View details</summary><div class="detail-content">VAT is being applied twice on generated invoices, resulting in overcharges. Financial and compliance risk.</div></details></td>
+</tr>
+<tr>
+  <td>14</td>
+  <td><span class="issue-title">Auto-message save fails — character limit bug</span><br><span class="issue-desc">Automated message editor fails to save when approaching character limits</span></td>
+  <td>Happiness</td>
+  <td><span class="module-tag">CRM / Messaging</span></td>
+  <td><span class="badge attention">Needs Attention</span></td>
+  <td><span class="source-tag">Slack Migration</span></td>
+  <td><a href="https://boomnoworkspace.slack.com/archives/C09QHKE6FL5/p1770877126041549" target="_blank" style="color:var(--rp-primary);font-size:12px;">View&nbsp;↗</a></td>
+  <td style="color:var(--rp-muted);font-size:12px;text-align:center;">—</td>
+  <td><span style="display:inline-block;font-size:11px;font-weight:600;padding:2px 10px;border-radius:999px;letter-spacing:0.5px;background:#fffbeb; color:#b45309; border:1px solid #fde68a;">Open</span><span style="display:inline-block;font-size:9px;font-weight:700;padding:1px 6px;border-radius:4px;background:#fef2f2;color:#dc2626;border:1px solid #fecaca;margin-left:4px;vertical-align:middle;">↻ NEXT WEEK</span></td>
+  <td><details><summary>View details</summary><div class="detail-content">Auto-message creation/editing fails to save content near the character limit without clear error messaging. Users lose drafted content.</div></details></td>
+</tr>
+<tr>
+  <td>15</td>
+  <td><span class="issue-title">Inactive auto-messages disappearing from view</span><br><span class="issue-desc">Deactivated automated messages no longer visible in message list</span></td>
+  <td>Happiness</td>
+  <td><span class="module-tag">CRM / Messaging</span></td>
+  <td><span class="badge attention">Needs Attention</span></td>
+  <td><span class="source-tag">Slack Migration</span></td>
+  <td><a href="https://boomnoworkspace.slack.com/archives/C09QHKE6FL5/p1770877126041549" target="_blank" style="color:var(--rp-primary);font-size:12px;">View&nbsp;↗</a></td>
+  <td style="color:var(--rp-muted);font-size:12px;text-align:center;">—</td>
+  <td><span style="display:inline-block;font-size:11px;font-weight:600;padding:2px 10px;border-radius:999px;letter-spacing:0.5px;background:#fffbeb; color:#b45309; border:1px solid #fde68a;">Open</span><span style="display:inline-block;font-size:9px;font-weight:700;padding:1px 6px;border-radius:4px;background:#fef2f2;color:#dc2626;border:1px solid #fecaca;margin-left:4px;vertical-align:middle;">↻ NEXT WEEK</span></td>
+  <td><details><summary>View details</summary><div class="detail-content">When auto-messages are set to inactive, they disappear from the UI entirely. Users cannot find or re-enable them without assistance.</div></details></td>
+</tr>
+<tr>
+  <td>16</td>
+  <td><span class="issue-title">BDC message delivery variance</span><br><span class="issue-desc">Booking.com messages delivered with inconsistent timing or missing</span></td>
+  <td>Biz Flats</td>
+  <td><span class="module-tag">CRM / Messaging</span></td>
+  <td><span class="badge attention">Needs Attention</span></td>
+  <td><span class="source-tag">Slack Migration</span></td>
+  <td><a href="https://boomnoworkspace.slack.com/archives/C0A12AQ7XHP/p1770909409638699" target="_blank" style="color:var(--rp-primary);font-size:12px;">View&nbsp;↗</a></td>
+  <td style="color:var(--rp-muted);font-size:12px;text-align:center;">—</td>
+  <td><span style="display:inline-block;font-size:11px;font-weight:600;padding:2px 10px;border-radius:999px;letter-spacing:0.5px;background:#fffbeb; color:#b45309; border:1px solid #fde68a;">Open</span><span style="display:inline-block;font-size:9px;font-weight:700;padding:1px 6px;border-radius:4px;background:#fef2f2;color:#dc2626;border:1px solid #fecaca;margin-left:4px;vertical-align:middle;">↻ NEXT WEEK</span></td>
+  <td><details><summary>View details</summary><div class="detail-content">Messages sent to Booking.com guests experiencing delivery delays or not arriving at all. Variance in delivery timing across different properties.</div></details></td>
+</tr>
+<tr>
+  <td>17</td>
+  <td><span class="issue-title">TravelStaytion channel missing from OTA list</span><br><span class="issue-desc">TravelStaytion distribution channel not available for mapping</span></td>
+  <td>More Than Stays</td>
+  <td><span class="module-tag">Channel Manager / OTA</span></td>
+  <td><span class="badge attention">Needs Attention</span></td>
+  <td><span class="source-tag">Slack Support</span></td>
+  <td><a href="https://boomnoworkspace.slack.com/archives/C0881GHHUF6/p1769612946460569" target="_blank" style="color:var(--rp-primary);font-size:12px;">View&nbsp;↗</a></td>
+  <td style="color:var(--rp-muted);font-size:12px;text-align:center;">—</td>
+  <td><span style="display:inline-block;font-size:11px;font-weight:600;padding:2px 10px;border-radius:999px;letter-spacing:0.5px;background:#ecfdf5; color:#047857; border:1px solid #a7f3d0;">Resolved</span></td>
+  <td><details><summary>View details</summary><div class="detail-content">Client unable to find TravelStaytion as a channel option. Blocking new channel distribution setup.</div></details></td>
+</tr>
+<tr>
+  <td>18</td>
+  <td><span class="issue-title">Processing fee cannot be removed from reservation</span><br><span class="issue-desc">Fee toggle or removal not functioning on certain reservations</span></td>
+  <td>More Than Stays</td>
+  <td><span class="module-tag">Payments</span></td>
+  <td><span class="badge attention">Needs Attention</span></td>
+  <td><span class="source-tag">Slack Support</span></td>
+  <td><a href="https://boomnoworkspace.slack.com/archives/C0881GHHUF6/p1770742264555669" target="_blank" style="color:var(--rp-primary);font-size:12px;">View&nbsp;↗</a></td>
+  <td style="color:var(--rp-muted);font-size:12px;text-align:center;">—</td>
+  <td><span style="display:inline-block;font-size:11px;font-weight:600;padding:2px 10px;border-radius:999px;letter-spacing:0.5px;background:#eff6ff; color:#1d4ed8; border:1px solid #bfdbfe;">In Progress</span><span style="display:inline-block;font-size:9px;font-weight:700;padding:1px 6px;border-radius:4px;background:#fef2f2;color:#dc2626;border:1px solid #fecaca;margin-left:4px;vertical-align:middle;">↻ NEXT WEEK</span></td>
+  <td><details><summary>View details</summary><div class="detail-content">Processing fee added to certain reservations cannot be removed or adjusted. Impacts invoicing accuracy. Also reported via Intercom for owner holidays.</div></details></td>
+</tr>
+<tr>
+  <td>19</td>
+  <td><span class="issue-title">Booking.com listing not mapped properly</span><br><span class="issue-desc">Listing showing incorrect mapping on Booking.com channel</span></td>
+  <td>Eden Villas Miami</td>
+  <td><span class="module-tag">Channel Manager / OTA</span></td>
+  <td><span class="badge attention">Needs Attention</span></td>
+  <td><span class="source-tag">Intercom</span></td>
+  <td><a href="https://app.intercom.com/a/apps/rjv8g8a2/conversations/215473076021302" target="_blank" style="color:var(--rp-primary);font-size:12px;">View&nbsp;↗</a></td>
+  <td style="color:var(--rp-muted);font-size:12px;text-align:center;">—</td>
+  <td><span style="display:inline-block;font-size:11px;font-weight:600;padding:2px 10px;border-radius:999px;letter-spacing:0.5px;background:#fffbeb; color:#b45309; border:1px solid #fde68a;">Open</span><span style="display:inline-block;font-size:9px;font-weight:700;padding:1px 6px;border-radius:4px;background:#fef2f2;color:#dc2626;border:1px solid #fecaca;margin-left:4px;vertical-align:middle;">↻ NEXT WEEK</span></td>
+  <td><details><summary>View details</summary><div class="detail-content">Booking.com listing mapped to wrong unit or showing incorrect details. Needs remapping to correct property/room type.</div></details></td>
+</tr>
+<tr>
+  <td>20</td>
+  <td><span class="issue-title">Owner portal calculating February income incorrectly</span><br><span class="issue-desc">Owner statements for February showing wrong revenue figures</span></td>
+  <td>Dwell PropMan</td>
+  <td><span class="module-tag">Reporting &amp; Analytics</span></td>
+  <td><span class="badge attention">Needs Attention</span></td>
+  <td><span class="source-tag">Intercom</span></td>
+  <td><a href="https://app.intercom.com/a/apps/rjv8g8a2/conversations/215473109412471" target="_blank" style="color:var(--rp-primary);font-size:12px;">View&nbsp;↗</a></td>
+  <td style="color:var(--rp-muted);font-size:12px;text-align:center;">—</td>
+  <td><span style="display:inline-block;font-size:11px;font-weight:600;padding:2px 10px;border-radius:999px;letter-spacing:0.5px;background:#fffbeb; color:#b45309; border:1px solid #fde68a;">Open</span><span style="display:inline-block;font-size:9px;font-weight:700;padding:1px 6px;border-radius:4px;background:#fef2f2;color:#dc2626;border:1px solid #fecaca;margin-left:4px;vertical-align:middle;">↻ NEXT WEEK</span></td>
+  <td><details><summary>View details</summary><div class="detail-content">Owner portal revenue calculations for February are incorrect. Affects owner trust and payout accuracy.</div></details></td>
+</tr>
+<tr>
+  <td>21</td>
+  <td><span class="issue-title">CRM pictures not appearing in guest chat</span><br><span class="issue-desc">Images sent via CRM chat not loading for guests</span></td>
+  <td>Verano Property</td>
+  <td><span class="module-tag">CRM / Messaging</span></td>
+  <td><span class="badge attention">Needs Attention</span></td>
+  <td><span class="source-tag">Intercom</span></td>
+  <td><a href="https://app.intercom.com/a/apps/rjv8g8a2/conversations/215473088318511" target="_blank" style="color:var(--rp-primary);font-size:12px;">View&nbsp;↗</a></td>
+  <td><a href="https://github.com/designedvr/designedvr/issues/14106" target="_blank" style="color:var(--rp-primary);font-size:12px;">#14106&nbsp;↗</a></td>
+  <td><span style="display:inline-block;font-size:11px;font-weight:600;padding:2px 10px;border-radius:999px;letter-spacing:0.5px;background:#ecfdf5; color:#047857; border:1px solid #a7f3d0;">Resolved</span></td>
+  <td><details><summary>View details</summary><div class="detail-content">Images uploaded or shared via the CRM guest chat are not rendering. Affects ability to send property photos, directions, check-in info to guests.</div></details></td>
+</tr>
+<tr>
+  <td>22</td>
+  <td><span class="issue-title">WhatsApp template not showing</span><br><span class="issue-desc">Approved WhatsApp template messages not available for selection</span></td>
+  <td>Smith and Adams</td>
+  <td><span class="module-tag">CRM / Messaging</span></td>
+  <td><span class="badge attention">Needs Attention</span></td>
+  <td><span class="source-tag">Intercom</span></td>
+  <td><a href="https://app.intercom.com/a/apps/rjv8g8a2/conversations/215473093033539" target="_blank" style="color:var(--rp-primary);font-size:12px;">View&nbsp;↗</a></td>
+  <td style="color:var(--rp-muted);font-size:12px;text-align:center;">—</td>
+  <td><span style="display:inline-block;font-size:11px;font-weight:600;padding:2px 10px;border-radius:999px;letter-spacing:0.5px;background:#fffbeb; color:#b45309; border:1px solid #fde68a;">Open</span><span style="display:inline-block;font-size:9px;font-weight:700;padding:1px 6px;border-radius:4px;background:#fef2f2;color:#dc2626;border:1px solid #fecaca;margin-left:4px;vertical-align:middle;">↻ NEXT WEEK</span></td>
+  <td><details><summary>View details</summary><div class="detail-content">Pre-approved WhatsApp Business templates not appearing in template selector. Prevents sending WhatsApp messages to guests.</div></details></td>
+</tr>
+<tr>
+  <td>23</td>
+  <td><span class="issue-title">Expedia pricing problem</span><br><span class="issue-desc">Rates pushed to Expedia displaying incorrectly</span></td>
+  <td>TLV2Go</td>
+  <td><span class="module-tag">Pricing &amp; Financials</span></td>
+  <td><span class="badge attention">Needs Attention</span></td>
+  <td><span class="source-tag">Intercom</span></td>
+  <td><a href="https://app.intercom.com/a/apps/rjv8g8a2/conversations/215473052792325" target="_blank" style="color:var(--rp-primary);font-size:12px;">View&nbsp;↗</a></td>
+  <td style="color:var(--rp-muted);font-size:12px;text-align:center;">—</td>
+  <td><span style="display:inline-block;font-size:11px;font-weight:600;padding:2px 10px;border-radius:999px;letter-spacing:0.5px;background:#fffbeb; color:#b45309; border:1px solid #fde68a;">Open</span><span style="display:inline-block;font-size:9px;font-weight:700;padding:1px 6px;border-radius:4px;background:#fef2f2;color:#dc2626;border:1px solid #fecaca;margin-left:4px;vertical-align:middle;">↻ NEXT WEEK</span></td>
+  <td><details><summary>View details</summary><div class="detail-content">Pricing sent to Expedia not matching what was set in Boom. Could be markup/commission calculation or sync issue.</div></details></td>
+</tr>
+<tr>
+  <td>24</td>
+  <td><span class="issue-title">CuddlyNest listing onboarding delay</span><br><span class="issue-desc">CuddlyNest channel setup taking excessively long</span></td>
+  <td>Eason Stays</td>
+  <td><span class="module-tag">Channel Manager / OTA</span></td>
+  <td><span class="badge attention">Needs Attention</span></td>
+  <td><span class="source-tag">Slack Support</span></td>
+  <td><a href="https://boomnoworkspace.slack.com/archives/C09JR9U8VL6/p1770759747489909" target="_blank" style="color:var(--rp-primary);font-size:12px;">View&nbsp;↗</a></td>
+  <td style="color:var(--rp-muted);font-size:12px;text-align:center;">—</td>
+  <td><span style="display:inline-block;font-size:11px;font-weight:600;padding:2px 10px;border-radius:999px;letter-spacing:0.5px;background:#ecfdf5; color:#047857; border:1px solid #a7f3d0;">Resolved</span></td>
+  <td><details><summary>View details</summary><div class="detail-content">Client waiting for CuddlyNest integration setup. Significant backlog in ticket resolution for this client. Frustration building.</div></details></td>
+</tr>
+<tr>
+  <td>25</td>
+  <td><span class="issue-title">AI task comments appearing under wrong name</span><br><span class="issue-desc">Notes added by AI tasks showing incorrect author attribution</span></td>
+  <td>Aliyah Homes / Oaktree</td>
+  <td><span class="module-tag">Operations / Tasks</span></td>
+  <td><span class="badge attention">Needs Attention</span></td>
+  <td><span class="source-tag">Slack Support + Intercom</span></td>
+  <td><a href="https://boomnoworkspace.slack.com/archives/C09LM8SHR5G/p1770887345599809" target="_blank" style="color:var(--rp-primary);font-size:12px;">View&nbsp;↗</a></td>
+  <td style="color:var(--rp-muted);font-size:12px;text-align:center;">—</td>
+  <td><span style="display:inline-block;font-size:11px;font-weight:600;padding:2px 10px;border-radius:999px;letter-spacing:0.5px;background:#fffbeb; color:#b45309; border:1px solid #fde68a;">Open</span><span style="display:inline-block;font-size:9px;font-weight:700;padding:1px 6px;border-radius:4px;background:#fef2f2;color:#dc2626;border:1px solid #fecaca;margin-left:4px;vertical-align:middle;">↻ NEXT WEEK</span></td>
+  <td><details><summary>View details</summary><div class="detail-content">AI-generated task comments/notes are attributed to the wrong user. Reported by multiple clients (Aliyah Homes via Slack, Oaktree/Salwa via Intercom). Causes confusion about task ownership and accountability.</div></details></td>
+</tr>
+<tr>
+  <td>26</td>
+  <td><span class="issue-title">Missing prices on listings</span><br><span class="issue-desc">Some listing dates showing no pricing</span></td>
+  <td>Map Short Stays</td>
+  <td><span class="module-tag">Pricing &amp; Financials</span></td>
+  <td><span class="badge attention">Needs Attention</span></td>
+  <td><span class="source-tag">Slack Migration</span></td>
+  <td><a href="https://boomnoworkspace.slack.com/archives/C0A0MB7D4CE/p1771132563965269" target="_blank" style="color:var(--rp-primary);font-size:12px;">View&nbsp;↗</a></td>
+  <td style="color:var(--rp-muted);font-size:12px;text-align:center;">—</td>
+  <td><span style="display:inline-block;font-size:11px;font-weight:600;padding:2px 10px;border-radius:999px;letter-spacing:0.5px;background:#ecfdf5; color:#047857; border:1px solid #a7f3d0;">Resolved</span></td>
+  <td><details><summary>View details</summary><div class="detail-content">Certain date ranges on listings have no price set, resulting in unbookable dates. May be a pricing rule gap or sync issue with dynamic pricing provider.</div></details></td>
+</tr>
+<tr>
+  <td>27</td>
+  <td><span class="issue-title">Listing descriptions locked / uneditable</span><br><span class="issue-desc">Cannot edit listing descriptions in the system</span></td>
+  <td>Verano Property</td>
+  <td><span class="module-tag">Channel Manager / OTA</span></td>
+  <td><span class="badge attention">Needs Attention</span></td>
+  <td><span class="source-tag">Intercom</span></td>
+  <td><a href="https://app.intercom.com/a/apps/rjv8g8a2/conversations/215473085403271" target="_blank" style="color:var(--rp-primary);font-size:12px;">View&nbsp;↗</a></td>
+  <td style="color:var(--rp-muted);font-size:12px;text-align:center;">—</td>
+  <td><span style="display:inline-block;font-size:11px;font-weight:600;padding:2px 10px;border-radius:999px;letter-spacing:0.5px;background:#eff6ff; color:#1d4ed8; border:1px solid #bfdbfe;">In Progress</span><span style="display:inline-block;font-size:9px;font-weight:700;padding:1px 6px;border-radius:4px;background:#fef2f2;color:#dc2626;border:1px solid #fecaca;margin-left:4px;vertical-align:middle;">↻ NEXT WEEK</span></td>
+  <td><details><summary>View details</summary><div class="detail-content">Listing description fields appear locked or read-only. Client unable to update property descriptions. May be a permissions or OTA sync lock issue.</div></details></td>
+</tr>
+<tr>
+  <td>28</td>
+  <td><span class="issue-title">Discount hard-coded in reservation</span><br><span class="issue-desc">Discount value cannot be changed once applied</span></td>
+  <td>More Than Stays</td>
+  <td><span class="module-tag">Pricing &amp; Financials</span></td>
+  <td><span class="badge attention">Needs Attention</span></td>
+  <td><span class="source-tag">Slack Support</span></td>
+  <td><a href="https://boomnoworkspace.slack.com/archives/C0881GHHUF6/p1770319225999659" target="_blank" style="color:var(--rp-primary);font-size:12px;">View&nbsp;↗</a></td>
+  <td style="color:var(--rp-muted);font-size:12px;text-align:center;">—</td>
+  <td><span style="display:inline-block;font-size:11px;font-weight:600;padding:2px 10px;border-radius:999px;letter-spacing:0.5px;background:#eff6ff; color:#1d4ed8; border:1px solid #bfdbfe;">In Progress</span><span style="display:inline-block;font-size:9px;font-weight:700;padding:1px 6px;border-radius:4px;background:#fef2f2;color:#dc2626;border:1px solid #fecaca;margin-left:4px;vertical-align:middle;">↻ NEXT WEEK</span></td>
+  <td><details><summary>View details</summary><div class="detail-content">Once a discount (possibly from Pricelabs) is applied to a reservation, it becomes hard-coded and cannot be modified or removed. Limits pricing flexibility.</div></details></td>
+</tr>
+<tr>
+  <td>29</td>
+  <td><span class="issue-title">Sales figures irregularities</span><br><span class="issue-desc">Dashboard sales numbers not matching expected revenue</span></td>
+  <td>Smith and Adams</td>
+  <td><span class="module-tag">Reporting &amp; Analytics</span></td>
+  <td><span class="badge attention">Needs Attention</span></td>
+  <td><span class="source-tag">Intercom</span></td>
+  <td><a href="https://app.intercom.com/a/apps/rjv8g8a2/conversations/215473093033539" target="_blank" style="color:var(--rp-primary);font-size:12px;">View&nbsp;↗</a></td>
+  <td style="color:var(--rp-muted);font-size:12px;text-align:center;">—</td>
+  <td><span style="display:inline-block;font-size:11px;font-weight:600;padding:2px 10px;border-radius:999px;letter-spacing:0.5px;background:#fffbeb; color:#b45309; border:1px solid #fde68a;">Open</span><span style="display:inline-block;font-size:9px;font-weight:700;padding:1px 6px;border-radius:4px;background:#fef2f2;color:#dc2626;border:1px solid #fecaca;margin-left:4px;vertical-align:middle;">↻ NEXT WEEK</span></td>
+  <td><details><summary>View details</summary><div class="detail-content">Sales dashboard displaying figures that don't reconcile with actual booking revenue. Could be a reporting filter, date range, or calculation logic issue.</div></details></td>
+</tr>
+<tr>
+  <td>30</td>
+  <td><span class="issue-title">Expedia virtual card charging issue</span><br><span class="issue-desc">Unable to charge Expedia virtual cards through payment processor</span></td>
+  <td>Jaime Guti&eacute;rrez</td>
+  <td><span class="module-tag">Payments</span></td>
+  <td><span class="badge attention">Needs Attention</span></td>
+  <td><span class="source-tag">Intercom</span></td>
+  <td><a href="https://app.intercom.com/a/apps/rjv8g8a2/conversations/215473089234797" target="_blank" style="color:var(--rp-primary);font-size:12px;">View&nbsp;↗</a></td>
+  <td style="color:var(--rp-muted);font-size:12px;text-align:center;">—</td>
+  <td><span style="display:inline-block;font-size:11px;font-weight:600;padding:2px 10px;border-radius:999px;letter-spacing:0.5px;background:#fffbeb; color:#b45309; border:1px solid #fde68a;">Open</span><span style="display:inline-block;font-size:9px;font-weight:700;padding:1px 6px;border-radius:4px;background:#fef2f2;color:#dc2626;border:1px solid #fecaca;margin-left:4px;vertical-align:middle;">↻ NEXT WEEK</span></td>
+  <td><details><summary>View details</summary><div class="detail-content">Expedia-issued virtual credit cards failing to charge through Boom's payment integration. Revenue collection impacted.</div></details></td>
+</tr>
+<tr>
+  <td>31</td>
+  <td><span class="issue-title">Calendar block deletion not working</span><br><span class="issue-desc">Cannot remove existing calendar blocks</span></td>
+  <td>Smith and Adams</td>
+  <td><span class="module-tag">Calendar &amp; Availability</span></td>
+  <td><span class="badge attention">Needs Attention</span></td>
+  <td><span class="source-tag">Intercom</span></td>
+  <td><a href="https://app.intercom.com/a/apps/rjv8g8a2/conversations/215473106117628" target="_blank" style="color:var(--rp-primary);font-size:12px;">View&nbsp;↗</a></td>
+  <td style="color:var(--rp-muted);font-size:12px;text-align:center;">—</td>
+  <td><span style="display:inline-block;font-size:11px;font-weight:600;padding:2px 10px;border-radius:999px;letter-spacing:0.5px;background:#ecfdf5; color:#047857; border:1px solid #a7f3d0;">Resolved</span></td>
+  <td><details><summary>View details</summary><div class="detail-content">Existing calendar blocks cannot be deleted through the UI. Dates remain unavailable even when the block should be removed.</div></details></td>
+</tr>
+
+<!-- NORMAL PRIORITY -->
+<tr>
+  <td>32</td>
+  <td><span class="issue-title">WhatsApp message timeline request</span><br><span class="issue-desc">Client requesting timeline for WhatsApp integration setup</span></td>
+  <td>Biz Flats</td>
+  <td><span class="module-tag">CRM / Messaging</span></td>
+  <td><span class="badge normal">Normal</span></td>
+  <td><span class="source-tag">Slack Migration</span></td>
+  <td><a href="https://boomnoworkspace.slack.com/archives/C0A12AQ7XHP/p1771223081772339" target="_blank" style="color:var(--rp-primary);font-size:12px;">View&nbsp;↗</a></td>
+  <td style="color:var(--rp-muted);font-size:12px;text-align:center;">—</td>
+  <td><span style="display:inline-block;font-size:11px;font-weight:600;padding:2px 10px;border-radius:999px;letter-spacing:0.5px;background:#eff6ff; color:#1d4ed8; border:1px solid #bfdbfe;">In Progress</span><span style="display:inline-block;font-size:9px;font-weight:700;padding:1px 6px;border-radius:4px;background:#fef2f2;color:#dc2626;border:1px solid #fecaca;margin-left:4px;vertical-align:middle;">↻ NEXT WEEK</span></td>
+  <td><details><summary>View details</summary><div class="detail-content">Client requesting clarity on WhatsApp Business integration timeline and setup process.</div></details></td>
+</tr>
+<tr>
+  <td>33</td>
+  <td><span class="issue-title">Missing "Studio" listing type</span><br><span class="issue-desc">Studio unit type not available in property configuration</span></td>
+  <td>Simple Life</td>
+  <td><span class="module-tag">Channel Manager / OTA</span></td>
+  <td><span class="badge normal">Normal</span></td>
+  <td><span class="source-tag">Slack Migration</span></td>
+  <td><a href="https://boomnoworkspace.slack.com/archives/C09S84RE2TH/p1770911322175479" target="_blank" style="color:var(--rp-primary);font-size:12px;">View&nbsp;↗</a></td>
+  <td style="color:var(--rp-muted);font-size:12px;text-align:center;">—</td>
+  <td><span style="display:inline-block;font-size:11px;font-weight:600;padding:2px 10px;border-radius:999px;letter-spacing:0.5px;background:#fffbeb; color:#b45309; border:1px solid #fde68a;">Open</span><span style="display:inline-block;font-size:9px;font-weight:700;padding:1px 6px;border-radius:4px;background:#fef2f2;color:#dc2626;border:1px solid #fecaca;margin-left:4px;vertical-align:middle;">↻ NEXT WEEK</span></td>
+  <td><details><summary>View details</summary><div class="detail-content">Property type "Studio" not available in the listing type dropdown. Client needs this for accurate property categorization.</div></details></td>
+</tr>
+<tr>
+  <td>34</td>
+  <td><span class="issue-title">Confusing age restriction amenities UI</span><br><span class="issue-desc">Amenity settings for age restrictions unclear to users</span></td>
+  <td>Simple Life</td>
+  <td><span class="module-tag">Channel Manager / OTA</span></td>
+  <td><span class="badge normal">Normal</span></td>
+  <td><span class="source-tag">Slack Migration</span></td>
+  <td><a href="https://boomnoworkspace.slack.com/archives/C09S84RE2TH/p1770863912489109" target="_blank" style="color:var(--rp-primary);font-size:12px;">View&nbsp;↗</a></td>
+  <td style="color:var(--rp-muted);font-size:12px;text-align:center;">—</td>
+  <td><span style="display:inline-block;font-size:11px;font-weight:600;padding:2px 10px;border-radius:999px;letter-spacing:0.5px;background:#ecfdf5; color:#047857; border:1px solid #a7f3d0;">Resolved</span></td>
+  <td><details><summary>View details</summary><div class="detail-content">UI for setting age restriction amenities is confusing. Labels/options don't clearly communicate what each setting does.</div></details></td>
+</tr>
+<tr>
+  <td>35</td>
+  <td><span class="issue-title">Missing automated message setup instructions</span><br><span class="issue-desc">No documentation for configuring automated messages</span></td>
+  <td>Furnished Club</td>
+  <td><span class="module-tag">CRM / Messaging</span></td>
+  <td><span class="badge normal">Normal</span></td>
+  <td><span class="source-tag">Slack Migration</span></td>
+  <td><a href="https://boomnoworkspace.slack.com/archives/C0AA5H452LD/p1770843270027239" target="_blank" style="color:var(--rp-primary);font-size:12px;">View&nbsp;↗</a></td>
+  <td style="color:var(--rp-muted);font-size:12px;text-align:center;">—</td>
+  <td><span style="display:inline-block;font-size:11px;font-weight:600;padding:2px 10px;border-radius:999px;letter-spacing:0.5px;background:#fffbeb; color:#b45309; border:1px solid #fde68a;">Open</span></td>
+  <td><details><summary>View details</summary><div class="detail-content">Client onboarding missing guide for auto-message configuration. Feature request for better documentation or in-app walkthrough.</div></details></td>
+</tr>
+<tr>
+  <td>36</td>
+  <td><span class="issue-title">Latch integration in progress</span><br><span class="issue-desc">Smart lock integration setup pending completion</span></td>
+  <td>Furnished Club</td>
+  <td><span class="module-tag">Integrations / API</span></td>
+  <td><span class="badge normal">Normal</span></td>
+  <td><span class="source-tag">Slack Migration</span></td>
+  <td><a href="https://boomnoworkspace.slack.com/archives/C0AA5H452LD/p1770979850504439" target="_blank" style="color:var(--rp-primary);font-size:12px;">View&nbsp;↗</a></td>
+  <td style="color:var(--rp-muted);font-size:12px;text-align:center;">—</td>
+  <td><span style="display:inline-block;font-size:11px;font-weight:600;padding:2px 10px;border-radius:999px;letter-spacing:0.5px;background:#eff6ff; color:#1d4ed8; border:1px solid #bfdbfe;">In Progress</span></td>
+  <td><details><summary>View details</summary><div class="detail-content">Latch smart lock integration currently being set up. In progress — awaiting technical completion.</div></details></td>
+</tr>
+<tr>
+  <td>37</td>
+  <td><span class="issue-title">Dynamic pricing strategy setup needed</span><br><span class="issue-desc">Client needs help configuring pricing strategy rules</span></td>
+  <td>Beach Apartment</td>
+  <td><span class="module-tag">Pricing &amp; Financials</span></td>
+  <td><span class="badge normal">Normal</span></td>
+  <td><span class="source-tag">Slack Migration</span></td>
+  <td><a href="https://boomnoworkspace.slack.com/archives/C09SR94FD0U/p1770907067127689" target="_blank" style="color:var(--rp-primary);font-size:12px;">View&nbsp;↗</a></td>
+  <td style="color:var(--rp-muted);font-size:12px;text-align:center;">—</td>
+  <td><span style="display:inline-block;font-size:11px;font-weight:600;padding:2px 10px;border-radius:999px;letter-spacing:0.5px;background:#eff6ff; color:#1d4ed8; border:1px solid #bfdbfe;">In Progress</span></td>
+  <td><details><summary>View details</summary><div class="detail-content">Client requires assistance setting up dynamic pricing rules and strategy. Part of migration onboarding.</div></details></td>
+</tr>
+<tr>
+  <td>38</td>
+  <td><span class="issue-title">Gap night limitations</span><br><span class="issue-desc">Gap night rules not flexible enough for client needs</span></td>
+  <td>Beach Apartment</td>
+  <td><span class="module-tag">Calendar &amp; Availability</span></td>
+  <td><span class="badge normal">Normal</span></td>
+  <td><span class="source-tag">Slack Migration</span></td>
+  <td><a href="https://boomnoworkspace.slack.com/archives/C09SR94FD0U/p1770829329143209" target="_blank" style="color:var(--rp-primary);font-size:12px;">View&nbsp;↗</a></td>
+  <td style="color:var(--rp-muted);font-size:12px;text-align:center;">—</td>
+  <td><span style="display:inline-block;font-size:11px;font-weight:600;padding:2px 10px;border-radius:999px;letter-spacing:0.5px;background:#eff6ff; color:#1d4ed8; border:1px solid #bfdbfe;">In Progress</span></td>
+  <td><details><summary>View details</summary><div class="detail-content">Current gap night feature has limitations that don't meet client's specific requirements. Feature enhancement request.</div></details></td>
+</tr>
+<tr>
+  <td>39</td>
+  <td><span class="issue-title">Guest ID photo access request</span><br><span class="issue-desc">Client needs ability to view guest uploaded ID photos</span></td>
+  <td>More Than Stays</td>
+  <td><span class="module-tag">Guest Portal</span></td>
+  <td><span class="badge normal">Normal</span></td>
+  <td><span class="source-tag">Slack Support</span></td>
+  <td><a href="https://boomnoworkspace.slack.com/archives/C0881GHHUF6/p1770742264555669" target="_blank" style="color:var(--rp-primary);font-size:12px;">View&nbsp;↗</a></td>
+  <td style="color:var(--rp-muted);font-size:12px;text-align:center;">—</td>
+  <td><span style="display:inline-block;font-size:11px;font-weight:600;padding:2px 10px;border-radius:999px;letter-spacing:0.5px;background:#eff6ff; color:#1d4ed8; border:1px solid #bfdbfe;">In Progress</span><span style="display:inline-block;font-size:9px;font-weight:700;padding:1px 6px;border-radius:4px;background:#fef2f2;color:#dc2626;border:1px solid #fecaca;margin-left:4px;vertical-align:middle;">↻ NEXT WEEK</span></td>
+  <td><details><summary>View details</summary><div class="detail-content">Client asking for access to view guest pre-check-in ID photo uploads. May be a permissions or feature visibility issue.</div></details></td>
+</tr>
+<tr>
+  <td>40</td>
+  <td><span class="issue-title">Xero accounting integration request</span><br><span class="issue-desc">Client requesting Xero integration for financial sync</span></td>
+  <td>Dwell PropMan</td>
+  <td><span class="module-tag">Integrations / API</span></td>
+  <td><span class="badge normal">Normal</span></td>
+  <td><span class="source-tag">Intercom</span></td>
+  <td><a href="https://app.intercom.com/a/apps/rjv8g8a2/conversations/215473073065792" target="_blank" style="color:var(--rp-primary);font-size:12px;">View&nbsp;↗</a></td>
+  <td style="color:var(--rp-muted);font-size:12px;text-align:center;">—</td>
+  <td><span style="display:inline-block;font-size:11px;font-weight:600;padding:2px 10px;border-radius:999px;letter-spacing:0.5px;background:#fffbeb; color:#b45309; border:1px solid #fde68a;">Open</span></td>
+  <td><details><summary>View details</summary><div class="detail-content">Client requesting integration with Xero accounting software for automated financial data sync and reconciliation.</div></details></td>
+</tr>
+<tr>
+  <td>41</td>
+  <td><span class="issue-title">Booking.com mapping removal needed</span><br><span class="issue-desc">Need to unmap listing from Booking.com channel</span></td>
+  <td>SeanRent</td>
+  <td><span class="module-tag">Channel Manager / OTA</span></td>
+  <td><span class="badge normal">Normal</span></td>
+  <td><span class="source-tag">Intercom</span></td>
+  <td><a href="https://app.intercom.com/a/apps/rjv8g8a2/conversations/215473070855274" target="_blank" style="color:var(--rp-primary);font-size:12px;">View&nbsp;↗</a></td>
+  <td style="color:var(--rp-muted);font-size:12px;text-align:center;">—</td>
+  <td><span style="display:inline-block;font-size:11px;font-weight:600;padding:2px 10px;border-radius:999px;letter-spacing:0.5px;background:#ecfdf5; color:#047857; border:1px solid #a7f3d0;">Resolved</span></td>
+  <td><details><summary>View details</summary><div class="detail-content">Client needs to remove/unmap a listing from Booking.com. May need admin assistance to complete the unmapping.</div></details></td>
+</tr>
+<tr>
+  <td>42</td>
+  <td><span class="issue-title">Task completion status not visible</span><br><span class="issue-desc">Completed task status not reflecting in task dashboard</span></td>
+  <td>Smith and Adams</td>
+  <td><span class="module-tag">Operations / Tasks</span></td>
+  <td><span class="badge normal">Normal</span></td>
+  <td><span class="source-tag">Intercom</span></td>
+  <td><a href="https://app.intercom.com/a/apps/rjv8g8a2/conversations/215473093033539" target="_blank" style="color:var(--rp-primary);font-size:12px;">View&nbsp;↗</a></td>
+  <td style="color:var(--rp-muted);font-size:12px;text-align:center;">—</td>
+  <td><span style="display:inline-block;font-size:11px;font-weight:600;padding:2px 10px;border-radius:999px;letter-spacing:0.5px;background:#fffbeb; color:#b45309; border:1px solid #fde68a;">Open</span><span style="display:inline-block;font-size:9px;font-weight:700;padding:1px 6px;border-radius:4px;background:#fef2f2;color:#dc2626;border:1px solid #fecaca;margin-left:4px;vertical-align:middle;">↻ NEXT WEEK</span></td>
+  <td><details><summary>View details</summary><div class="detail-content">When tasks are marked complete, the status change is not visible in the task list/dashboard. UI refresh or state management issue.</div></details></td>
+</tr>
+<tr>
+  <td>43</td>
+  <td><span class="issue-title">User permissions request</span><br><span class="issue-desc">Client requesting updated user access permissions</span></td>
+  <td>Zvika Losh</td>
+  <td><span class="module-tag">Operations / Tasks</span></td>
+  <td><span class="badge normal">Normal</span></td>
+  <td><span class="source-tag">Intercom</span></td>
+  <td><a href="https://app.intercom.com/a/apps/rjv8g8a2/conversations/215473111011821" target="_blank" style="color:var(--rp-primary);font-size:12px;">View&nbsp;↗</a></td>
+  <td><a href="https://github.com/designedvr/designedvr/issues/14246" target="_blank" style="color:var(--rp-primary);font-size:12px;">#14246&nbsp;↗</a></td>
+  <td><span style="display:inline-block;font-size:11px;font-weight:600;padding:2px 10px;border-radius:999px;letter-spacing:0.5px;background:#fffbeb; color:#b45309; border:1px solid #fde68a;">Open</span><span style="display:inline-block;font-size:9px;font-weight:700;padding:1px 6px;border-radius:4px;background:#fef2f2;color:#dc2626;border:1px solid #fecaca;margin-left:4px;vertical-align:middle;">↻ NEXT WEEK</span></td>
+  <td><details><summary>View details</summary><div class="detail-content">Client requesting permission level changes for a user account. GitHub ticket #14246 created for feature request (check-in hours and invoice/receipt permissions for hotel-reception user group). BAM permissions not working as expected.</div></details></td>
+</tr>
+<tr>
+  <td>44</td>
+  <td><span class="issue-title">Reservation separation request</span><br><span class="issue-desc">Client needs to split a combined reservation into separate ones</span></td>
+  <td>Alisa Levin</td>
+  <td><span class="module-tag">Operations / Tasks</span></td>
+  <td><span class="badge normal">Normal</span></td>
+  <td><span class="source-tag">Intercom</span></td>
+  <td><a href="https://app.intercom.com/a/apps/rjv8g8a2/conversations/215473110168568" target="_blank" style="color:var(--rp-primary);font-size:12px;">View&nbsp;↗</a></td>
+  <td style="color:var(--rp-muted);font-size:12px;text-align:center;">—</td>
+  <td><span style="display:inline-block;font-size:11px;font-weight:600;padding:2px 10px;border-radius:999px;letter-spacing:0.5px;background:#fffbeb; color:#b45309; border:1px solid #fde68a;">Open</span><span style="display:inline-block;font-size:9px;font-weight:700;padding:1px 6px;border-radius:4px;background:#fef2f2;color:#dc2626;border:1px solid #fecaca;margin-left:4px;vertical-align:middle;">↻ NEXT WEEK</span></td>
+  <td><details><summary>View details</summary><div class="detail-content">Client needs a multi-unit reservation split into individual reservations. May need admin-level action.</div></details></td>
+</tr>
+<tr>
+  <td>45</td>
+  <td><span class="issue-title">Holiday date correction needed</span><br><span class="issue-desc">Incorrect holiday dates set in system calendar</span></td>
+  <td>Port City Haifa</td>
+  <td><span class="module-tag">Pricing &amp; Financials</span></td>
+  <td><span class="badge normal">Normal</span></td>
+  <td><span class="source-tag">Intercom</span></td>
+  <td><a href="https://app.intercom.com/a/apps/rjv8g8a2/conversations/215473110731172" target="_blank" style="color:var(--rp-primary);font-size:12px;">View&nbsp;↗</a></td>
+  <td style="color:var(--rp-muted);font-size:12px;text-align:center;">—</td>
+  <td><span style="display:inline-block;font-size:11px;font-weight:600;padding:2px 10px;border-radius:999px;letter-spacing:0.5px;background:#fffbeb; color:#b45309; border:1px solid #fde68a;">Open</span></td>
+  <td><details><summary>View details</summary><div class="detail-content">Holiday pricing dates configured incorrectly. Needs adjustment to reflect correct holiday calendar for the region.</div></details></td>
+</tr>
+<tr>
+  <td>46</td>
+  <td><span class="issue-title">Cash payment recording</span><br><span class="issue-desc">Client needs to log a cash payment against a reservation</span></td>
+  <td>Port City Haifa</td>
+  <td><span class="module-tag">Payments</span></td>
+  <td><span class="badge normal">Normal</span></td>
+  <td><span class="source-tag">Intercom</span></td>
+  <td><a href="https://app.intercom.com/a/apps/rjv8g8a2/conversations/215473110731172" target="_blank" style="color:var(--rp-primary);font-size:12px;">View&nbsp;↗</a></td>
+  <td style="color:var(--rp-muted);font-size:12px;text-align:center;">—</td>
+  <td><span style="display:inline-block;font-size:11px;font-weight:600;padding:2px 10px;border-radius:999px;letter-spacing:0.5px;background:#fffbeb; color:#b45309; border:1px solid #fde68a;">Open</span></td>
+  <td><details><summary>View details</summary><div class="detail-content">Client asking how to record a cash payment received for a reservation. May need feature guidance or a manual payment entry.</div></details></td>
+</tr>
+<tr>
+  <td>47</td>
+  <td><span class="issue-title">Listing error identification</span><br><span class="issue-desc">Client reporting errors on their property listing</span></td>
+  <td>Port City Haifa</td>
+  <td><span class="module-tag">Channel Manager / OTA</span></td>
+  <td><span class="badge normal">Normal</span></td>
+  <td><span class="source-tag">Intercom</span></td>
+  <td><a href="https://app.intercom.com/a/apps/rjv8g8a2/conversations/215473085861077" target="_blank" style="color:var(--rp-primary);font-size:12px;">View&nbsp;↗</a></td>
+  <td style="color:var(--rp-muted);font-size:12px;text-align:center;">—</td>
+  <td><span style="display:inline-block;font-size:11px;font-weight:600;padding:2px 10px;border-radius:999px;letter-spacing:0.5px;background:#ecfdf5; color:#047857; border:1px solid #a7f3d0;">Resolved</span></td>
+  <td><details><summary>View details</summary><div class="detail-content">Client identified errors on their listing details. Needs review and correction of property information.</div></details></td>
+</tr>
+<tr>
+  <td>48</td>
+  <td><span class="issue-title">Guest pre-check-in photo deletion concern</span><br><span class="issue-desc">Client worried about guest-uploaded photos being auto-deleted</span></td>
+  <td>More Than Stays</td>
+  <td><span class="module-tag">Guest Portal</span></td>
+  <td><span class="badge normal">Normal</span></td>
+  <td><span class="source-tag">Intercom</span></td>
+  <td><a href="https://app.intercom.com/a/apps/rjv8g8a2/conversations/215473044153834" target="_blank" style="color:var(--rp-primary);font-size:12px;">View&nbsp;↗</a></td>
+  <td><a href="https://github.com/designedvr/designedvr/issues/14108" target="_blank" style="color:var(--rp-primary);font-size:12px;">#14108&nbsp;↗</a></td>
+  <td><span style="display:inline-block;font-size:11px;font-weight:600;padding:2px 10px;border-radius:999px;letter-spacing:0.5px;background:#eff6ff; color:#1d4ed8; border:1px solid #bfdbfe;">In Progress</span><span style="display:inline-block;font-size:9px;font-weight:700;padding:1px 6px;border-radius:4px;background:#fef2f2;color:#dc2626;border:1px solid #fecaca;margin-left:4px;vertical-align:middle;">↻ NEXT WEEK</span></td>
+  <td><details><summary>View details</summary><div class="detail-content">Client concerned that guest-uploaded pre-check-in ID photos may be automatically deleted or not retained. Data retention policy question.</div></details></td>
+</tr>
+<tr>
+  <td>49</td>
+  <td><span class="issue-title">Maintenance block vs reservation for tax purposes</span><br><span class="issue-desc">Client needs clarity on how maintenance blocks affect tax reporting</span></td>
+  <td>MyBeach</td>
+  <td><span class="module-tag">Reporting &amp; Analytics</span></td>
+  <td><span class="badge normal">Normal</span></td>
+  <td><span class="source-tag">Intercom</span></td>
+  <td><a href="https://app.intercom.com/a/apps/rjv8g8a2/conversations/215473077144701" target="_blank" style="color:var(--rp-primary);font-size:12px;">View&nbsp;↗</a></td>
+  <td style="color:var(--rp-muted);font-size:12px;text-align:center;">—</td>
+  <td><span style="display:inline-block;font-size:11px;font-weight:600;padding:2px 10px;border-radius:999px;letter-spacing:0.5px;background:#fffbeb; color:#b45309; border:1px solid #fde68a;">Open</span></td>
+  <td><details><summary>View details</summary><div class="detail-content">Client asking whether maintenance calendar blocks are treated differently from reservations in tax/financial reports.</div></details></td>
+</tr>
+<tr>
+  <td>50</td>
+  <td><span class="issue-title">Guest experience security deposit setup</span><br><span class="issue-desc">Client needs help configuring security deposit collection</span></td>
+  <td>Beachcomrent</td>
+  <td><span class="module-tag">Guest Portal</span></td>
+  <td><span class="badge normal">Normal</span></td>
+  <td><span class="source-tag">Intercom</span></td>
+  <td><a href="https://app.intercom.com/a/apps/rjv8g8a2/conversations/215473060597059" target="_blank" style="color:var(--rp-primary);font-size:12px;">View&nbsp;↗</a></td>
+  <td style="color:var(--rp-muted);font-size:12px;text-align:center;">—</td>
+  <td><span style="display:inline-block;font-size:11px;font-weight:600;padding:2px 10px;border-radius:999px;letter-spacing:0.5px;background:#fffbeb; color:#b45309; border:1px solid #fde68a;">Open</span></td>
+  <td><details><summary>View details</summary><div class="detail-content">Client requesting setup guidance for security deposit collection through the guest portal experience.</div></details></td>
+</tr>
+<tr>
+  <td>51</td>
+  <td><span class="issue-title">Service call notification overload</span><br><span class="issue-desc">Too many notifications generated for service calls</span></td>
+  <td>NOX</td>
+  <td><span class="module-tag">Operations / Tasks</span></td>
+  <td><span class="badge normal">Normal</span></td>
+  <td><span class="source-tag">Intercom</span></td>
+  <td><a href="https://app.intercom.com/a/apps/rjv8g8a2/conversations/215473070450696" target="_blank" style="color:var(--rp-primary);font-size:12px;">View&nbsp;↗</a></td>
+  <td style="color:var(--rp-muted);font-size:12px;text-align:center;">—</td>
+  <td><span style="display:inline-block;font-size:11px;font-weight:600;padding:2px 10px;border-radius:999px;letter-spacing:0.5px;background:#fffbeb; color:#b45309; border:1px solid #fde68a;">Open</span><span style="display:inline-block;font-size:9px;font-weight:700;padding:1px 6px;border-radius:4px;background:#fef2f2;color:#dc2626;border:1px solid #fecaca;margin-left:4px;vertical-align:middle;">↻ NEXT WEEK</span></td>
+  <td><details><summary>View details</summary><div class="detail-content">Excessive notification volume for service call updates. Creating alert fatigue for operations team.</div></details></td>
+</tr>
+<tr>
+  <td>52</td>
+  <td><span class="issue-title">Occupancy reporting issue</span><br><span class="issue-desc">Occupancy rates displaying incorrectly in reports</span></td>
+  <td>—</td>
+  <td><span class="module-tag">Reporting &amp; Analytics</span></td>
+  <td><span class="badge normal">Normal</span></td>
+  <td><span class="source-tag">Intercom</span></td>
+  <td><a href="https://app.intercom.com/a/apps/rjv8g8a2/conversations/215473070450696" target="_blank" style="color:var(--rp-primary);font-size:12px;">View&nbsp;↗</a></td>
+  <td style="color:var(--rp-muted);font-size:12px;text-align:center;">—</td>
+  <td><span style="display:inline-block;font-size:11px;font-weight:600;padding:2px 10px;border-radius:999px;letter-spacing:0.5px;background:#fffbeb; color:#b45309; border:1px solid #fde68a;">Open</span><span style="display:inline-block;font-size:9px;font-weight:700;padding:1px 6px;border-radius:4px;background:#fef2f2;color:#dc2626;border:1px solid #fecaca;margin-left:4px;vertical-align:middle;">↻ NEXT WEEK</span></td>
+  <td><details><summary>View details</summary><div class="detail-content">Occupancy percentage calculations in reports not matching actual booking data. Possible formula or date-range logic issue.</div></details></td>
+</tr>
+<tr>
+  <td>53</td>
+  <td><span class="issue-title">Hopper Quick Connect username needed</span><br><span class="issue-desc">Client requesting Hopper Quick Connect credentials</span></td>
+  <td>Eden Villas</td>
+  <td><span class="module-tag">Channel Manager / OTA</span></td>
+  <td><span class="badge normal">Normal</span></td>
+  <td><span class="source-tag">Intercom</span></td>
+  <td><a href="https://app.intercom.com/a/apps/rjv8g8a2/conversations/215473098953201" target="_blank" style="color:var(--rp-primary);font-size:12px;">View&nbsp;↗</a></td>
+  <td style="color:var(--rp-muted);font-size:12px;text-align:center;">—</td>
+  <td><span style="display:inline-block;font-size:11px;font-weight:600;padding:2px 10px;border-radius:999px;letter-spacing:0.5px;background:#fffbeb; color:#b45309; border:1px solid #fde68a;">Open</span></td>
+  <td><details><summary>View details</summary><div class="detail-content">Client needs Quick Connect username for Hopper channel integration setup.</div></details></td>
+</tr>
+<tr>
+  <td>54</td>
+  <td><span class="issue-title">Property not appearing in listing view</span><br><span class="issue-desc">A property is missing from the listing management screen</span></td>
+  <td>Meir Steinberg</td>
+  <td><span class="module-tag">Channel Manager / OTA</span></td>
+  <td><span class="badge normal">Normal</span></td>
+  <td><span class="source-tag">Intercom</span></td>
+  <td><a href="https://app.intercom.com/a/apps/rjv8g8a2/conversations/215473110356374" target="_blank" style="color:var(--rp-primary);font-size:12px;">View&nbsp;↗</a></td>
+  <td style="color:var(--rp-muted);font-size:12px;text-align:center;">—</td>
+  <td><span style="display:inline-block;font-size:11px;font-weight:600;padding:2px 10px;border-radius:999px;letter-spacing:0.5px;background:#ecfdf5; color:#047857; border:1px solid #a7f3d0;">Resolved</span></td>
+  <td><details><summary>View details</summary><div class="detail-content">One of the client's properties is not visible in the listing management view. May be a filter, status, or data issue.</div></details></td>
+</tr>
+<tr>
+  <td>55</td>
+  <td><span class="issue-title">Processing fee on owner holidays</span><br><span class="issue-desc">Processing fees being applied to owner-blocked dates</span></td>
+  <td>More Than Stays</td>
+  <td><span class="module-tag">Payments</span></td>
+  <td><span class="badge normal">Normal</span></td>
+  <td><span class="source-tag">Intercom</span></td>
+  <td><a href="https://app.intercom.com/a/apps/rjv8g8a2/conversations/215473044153834" target="_blank" style="color:var(--rp-primary);font-size:12px;">View&nbsp;↗</a></td>
+  <td><a href="https://github.com/designedvr/designedvr/issues/14108" target="_blank" style="color:var(--rp-primary);font-size:12px;">#14108&nbsp;↗</a></td>
+  <td><span style="display:inline-block;font-size:11px;font-weight:600;padding:2px 10px;border-radius:999px;letter-spacing:0.5px;background:#eff6ff; color:#1d4ed8; border:1px solid #bfdbfe;">In Progress</span><span style="display:inline-block;font-size:9px;font-weight:700;padding:1px 6px;border-radius:4px;background:#fef2f2;color:#dc2626;border:1px solid #fecaca;margin-left:4px;vertical-align:middle;">↻ NEXT WEEK</span></td>
+  <td><details><summary>View details</summary><div class="detail-content">Processing fees are being applied to dates blocked for owner use (holidays), which shouldn't incur fees.</div></details></td>
+</tr>
+<tr>
+  <td>56</td>
+  <td><span class="issue-title">Guest portal photo access</span><br><span class="issue-desc">Need better access to guest-uploaded photos in guest portal</span></td>
+  <td>More Than Stays</td>
+  <td><span class="module-tag">Guest Portal</span></td>
+  <td><span class="badge normal">Normal</span></td>
+  <td><span class="source-tag">Intercom</span></td>
+  <td><a href="https://app.intercom.com/a/apps/rjv8g8a2/conversations/215473044153834" target="_blank" style="color:var(--rp-primary);font-size:12px;">View&nbsp;↗</a></td>
+  <td><a href="https://github.com/designedvr/designedvr/issues/14108" target="_blank" style="color:var(--rp-primary);font-size:12px;">#14108&nbsp;↗</a></td>
+  <td><span style="display:inline-block;font-size:11px;font-weight:600;padding:2px 10px;border-radius:999px;letter-spacing:0.5px;background:#eff6ff; color:#1d4ed8; border:1px solid #bfdbfe;">In Progress</span><span style="display:inline-block;font-size:9px;font-weight:700;padding:1px 6px;border-radius:4px;background:#fef2f2;color:#dc2626;border:1px solid #fecaca;margin-left:4px;vertical-align:middle;">↻ NEXT WEEK</span></td>
+  <td><details><summary>View details</summary><div class="detail-content">Client requesting improved way to access and manage photos uploaded by guests during the pre-check-in process.</div></details></td>
+</tr>
+<tr>
+  <td>57</td>
+  <td><span class="issue-title">Reporting — occupancy display issues</span><br><span class="issue-desc">Occupancy rates and display inconsistencies in dashboard</span></td>
+  <td>—</td>
+  <td><span class="module-tag">Reporting &amp; Analytics</span></td>
+  <td><span class="badge normal">Normal</span></td>
+  <td><span class="source-tag">Intercom</span></td>
+  <td><a href="https://app.intercom.com/a/apps/rjv8g8a2/conversations/215473070450696" target="_blank" style="color:var(--rp-primary);font-size:12px;">View&nbsp;↗</a></td>
+  <td style="color:var(--rp-muted);font-size:12px;text-align:center;">—</td>
+  <td><span style="display:inline-block;font-size:11px;font-weight:600;padding:2px 10px;border-radius:999px;letter-spacing:0.5px;background:#fffbeb; color:#b45309; border:1px solid #fde68a;">Open</span><span style="display:inline-block;font-size:9px;font-weight:700;padding:1px 6px;border-radius:4px;background:#fef2f2;color:#dc2626;border:1px solid #fecaca;margin-left:4px;vertical-align:middle;">↻ NEXT WEEK</span></td>
+  <td><details><summary>View details</summary><div class="detail-content">Dashboard occupancy rates showing inconsistencies. May be related to how cancelled or blocked dates are counted.</div></details></td>
+</tr>
+</tbody>
+</table>
+
+
+<!-- ============================================================ -->
+<!-- SECTION: CARRY OVER TO NEXT WEEK -->
+<!-- ============================================================ -->
+<div class="section-title" style="border-bottom-color:#dc2626;">↻ Carry Over to Next Week (34 issues)</div>
+<p style="font-size:13px;color:var(--rp-muted);margin-bottom:16px;">The following issues remain unresolved after this week and should be prioritized or followed up in the week of Feb 17–23.</p>
+
+<div style="background:var(--rp-card);border-radius:12px;border:1px solid var(--rp-border);padding:20px;margin-bottom:16px;">
+  <h3 style="font-size:15px;color:var(--rp-critical);margin-bottom:12px;">🔴 Critical (6 issues)</h3>
+  <table style="width:100%;border-collapse:collapse;">
+    <tr><td style="font-weight:600;width:5%;">#1</td><td style="width:50%;">Open since Dec — AI auto-bouncing service calls. Partial fix only.</td><td style="width:15%;color:#b45309;font-weight:600;">Open</td></tr>
+    <tr><td style="font-weight:600;width:5%;">#2</td><td style="width:50%;">Multi-calendar broken — blocking daily ops for Eason Stays.</td><td style="width:15%;color:#b45309;font-weight:600;">Open</td></tr>
+    <tr><td style="font-weight:600;width:5%;">#3</td><td style="width:50%;">Pricing API 500 errors — revenue impacting.</td><td style="width:15%;color:#b45309;font-weight:600;">Open</td></tr>
+    <tr><td style="font-weight:600;width:5%;">#6</td><td style="width:50%;">Marriott reservation not syncing — escalated to RU Tier 3.</td><td style="width:15%;color:#1d4ed8;font-weight:600;">In Progress</td></tr>
+    <tr><td style="font-weight:600;width:5%;">#8</td><td style="width:50%;">Phantom cleaning tasks — confirmed bug, needs engineering fix.</td><td style="width:15%;color:#b45309;font-weight:600;">Open</td></tr>
+    <tr><td style="font-weight:600;width:5%;">#9</td><td style="width:50%;">Reservation sync broken after channel restart.</td><td style="width:15%;color:#b45309;font-weight:600;">Open</td></tr>
+  </table>
+</div>
+
+<div style="background:var(--rp-card);border-radius:12px;border:1px solid var(--rp-border);padding:20px;margin-bottom:16px;">
+  <h3 style="font-size:15px;color:#b45309;margin-bottom:12px;">🟡 Needs Attention (16 issues)</h3>
+  <table style="width:100%;border-collapse:collapse;">
+    <tr><td style="font-weight:600;width:5%;">#10</td><td style="width:50%;">Automated messages not sending — in progress with dev.</td><td style="width:15%;color:#1d4ed8;font-weight:600;">In Progress</td></tr>
+    <tr><td style="font-weight:600;width:5%;">#11</td><td style="width:50%;">BDC payment showing unpaid — being investigated.</td><td style="width:15%;color:#7c3aed;font-weight:600;">Investigating</td></tr>
+    <tr><td style="font-weight:600;width:5%;">#13</td><td style="width:50%;">VAT double calculation — financial/compliance risk.</td><td style="width:15%;color:#b45309;font-weight:600;">Open</td></tr>
+    <tr><td style="font-weight:600;width:5%;">#14</td><td style="width:50%;">Auto-message character limit bug — no response yet.</td><td style="width:15%;color:#b45309;font-weight:600;">Open</td></tr>
+    <tr><td style="font-weight:600;width:5%;">#15</td><td style="width:50%;">Inactive auto-messages disappearing — no response yet.</td><td style="width:15%;color:#b45309;font-weight:600;">Open</td></tr>
+    <tr><td style="font-weight:600;width:5%;">#16</td><td style="width:50%;">BDC message delivery inconsistent — no response yet.</td><td style="width:15%;color:#b45309;font-weight:600;">Open</td></tr>
+    <tr><td style="font-weight:600;width:5%;">#18</td><td style="width:50%;">Processing fee bug — submitted to dev team.</td><td style="width:15%;color:#1d4ed8;font-weight:600;">In Progress</td></tr>
+    <tr><td style="font-weight:600;width:5%;">#19</td><td style="width:50%;">BDC listing mapping incorrect — pending correction.</td><td style="width:15%;color:#b45309;font-weight:600;">Open</td></tr>
+    <tr><td style="font-weight:600;width:5%;">#20</td><td style="width:50%;">Owner portal Feb income wrong — affects owner trust.</td><td style="width:15%;color:#b45309;font-weight:600;">Open</td></tr>
+    <tr><td style="font-weight:600;width:5%;">#22</td><td style="width:50%;">WhatsApp templates not showing — blocking guest messaging.</td><td style="width:15%;color:#b45309;font-weight:600;">Open</td></tr>
+    <tr><td style="font-weight:600;width:5%;">#23</td><td style="width:50%;">Expedia pricing mismatch — reopened, still unresolved.</td><td style="width:15%;color:#b45309;font-weight:600;">Open</td></tr>
+    <tr><td style="font-weight:600;width:5%;">#25</td><td style="width:50%;">AI task comments wrong author — reported by multiple clients.</td><td style="width:15%;color:#b45309;font-weight:600;">Open</td></tr>
+    <tr><td style="font-weight:600;width:5%;">#27</td><td style="width:50%;">Listing descriptions locked — client frustrated, in progress.</td><td style="width:15%;color:#1d4ed8;font-weight:600;">In Progress</td></tr>
+    <tr><td style="font-weight:600;width:5%;">#28</td><td style="width:50%;">Discount hard-coded — dev ticket #13719 created.</td><td style="width:15%;color:#1d4ed8;font-weight:600;">In Progress</td></tr>
+    <tr><td style="font-weight:600;width:5%;">#29</td><td style="width:50%;">Sales figures irregularities — unresolved.</td><td style="width:15%;color:#b45309;font-weight:600;">Open</td></tr>
+    <tr><td style="font-weight:600;width:5%;">#30</td><td style="width:50%;">Expedia virtual card charging — revenue collection impacted.</td><td style="width:15%;color:#b45309;font-weight:600;">Open</td></tr>
+  </table>
+</div>
+
+<div style="background:var(--rp-card);border-radius:12px;border:1px solid var(--rp-border);padding:20px;margin-bottom:24px;">
+  <h3 style="font-size:15px;color:var(--rp-muted);margin-bottom:12px;">⚪ Normal — Still Needs Follow-Up (12 issues)</h3>
+  <table style="width:100%;border-collapse:collapse;">
+    <tr><td style="font-weight:600;width:5%;">#32</td><td style="width:50%;">WhatsApp setup — waiting on Twilio, client expecting timeline.</td><td style="width:15%;color:#1d4ed8;font-weight:600;">In Progress</td></tr>
+    <tr><td style="font-weight:600;width:5%;">#33</td><td style="width:50%;">Missing Studio listing type — blocking property categorization.</td><td style="width:15%;color:#b45309;font-weight:600;">Open</td></tr>
+    <tr><td style="font-weight:600;width:5%;">#39</td><td style="width:50%;">Guest ID photo access — same thread as processing fee bug.</td><td style="width:15%;color:#1d4ed8;font-weight:600;">In Progress</td></tr>
+    <tr><td style="font-weight:600;width:5%;">#42</td><td style="width:50%;">Task completion status not visible — operational bug.</td><td style="width:15%;color:#b45309;font-weight:600;">Open</td></tr>
+    <tr><td style="font-weight:600;width:5%;">#43</td><td style="width:50%;">User permissions not working via BAM — GitHub #14246 created.</td><td style="width:15%;color:#b45309;font-weight:600;">Open</td></tr>
+    <tr><td style="font-weight:600;width:5%;">#44</td><td style="width:50%;">Reservation separation needed — pending admin action.</td><td style="width:15%;color:#b45309;font-weight:600;">Open</td></tr>
+    <tr><td style="font-weight:600;width:5%;">#48</td><td style="width:50%;">Guest pre-check-in photo deletion — GitHub #14108, dev reviewing.</td><td style="width:15%;color:#1d4ed8;font-weight:600;">In Progress</td></tr>
+    <tr><td style="font-weight:600;width:5%;">#51</td><td style="width:50%;">Service call notification overload — 50+ emails/day, alert fatigue.</td><td style="width:15%;color:#b45309;font-weight:600;">Open</td></tr>
+    <tr><td style="font-weight:600;width:5%;">#52</td><td style="width:50%;">Occupancy reporting incorrect — data integrity issue.</td><td style="width:15%;color:#b45309;font-weight:600;">Open</td></tr>
+    <tr><td style="font-weight:600;width:5%;">#55</td><td style="width:50%;">Processing fee on owner holidays — GitHub #14108, dev reviewing.</td><td style="width:15%;color:#1d4ed8;font-weight:600;">In Progress</td></tr>
+    <tr><td style="font-weight:600;width:5%;">#56</td><td style="width:50%;">Guest portal photo access — GitHub #14108, dev reviewing.</td><td style="width:15%;color:#1d4ed8;font-weight:600;">In Progress</td></tr>
+    <tr><td style="font-weight:600;width:5%;">#57</td><td style="width:50%;">Occupancy display inconsistencies — data integrity issue.</td><td style="width:15%;color:#b45309;font-weight:600;">Open</td></tr>
+  </table>
+</div>
+
+<!-- ============================================================ -->
+<!-- SECTION 4: PER-CLIENT DETAILED ANALYSIS -->
+<!-- ============================================================ -->
+<div class="section-title">Per-Client Detailed Analysis</div>
+
+<!-- NOX -->
+<div class="client-section">
+  <div class="client-name">NOX</div>
+  <div class="client-meta">Source: Slack Support &amp; Intercom &nbsp;|&nbsp; Issues this week: 2 &nbsp;|&nbsp; Modules: Operations / Tasks</div>
+  <div class="client-issue">
+    <h4><span class="badge critical">Critical</span> &nbsp; AI Auto-Bouncing Service Calls</h4>
+    <p style="font-size:13px; margin-top:6px;">The AI Customer Service module is autonomously bouncing service calls it creates, despite the auto-bounce feature being explicitly turned off in task configuration. This has been ongoing since December (Ticket #63845703). The operations team is missing overdue tasks because bounced tasks appear as new. One confirmed case of a lost 2-night booking due to a rescheduled task being missed.</p>
+    <div class="cause-box"><strong>Possible Causes:</strong> AI task engine not reading TC-level auto-bounce settings; override logic in AI module bypassing user preferences; regression introduced in a recent update affecting task bounce rules.</div>
+    <div class="rec-box"><strong>Recommendations:</strong> Escalate to engineering as P1. Audit AI task bounce logic against TC settings. Provide NOX with manual workaround (disable AI service call creation temporarily). Review all AI-created tasks for other clients to confirm scope of bug.</div>
+  </div>
+  <div class="client-issue">
+    <h4><span class="badge normal">Normal</span> &nbsp; Service Call Notification Overload</h4>
+    <p style="font-size:13px; margin-top:6px;">Operations team receiving excessive notifications for service call updates, creating alert fatigue and making it difficult to identify genuinely urgent items.</p>
+    <div class="cause-box"><strong>Possible Causes:</strong> Notification rules too broad; AI-generated service calls multiplying notification volume; no throttling on service call status updates.</div>
+    <div class="rec-box"><strong>Recommendations:</strong> Review notification preferences and suggest more granular settings. Consider implementing notification batching/digest for service calls. May be partially resolved once the AI bounce bug is fixed.</div>
+  </div>
+</div>
+
+<!-- Eason Stays -->
+<div class="client-section">
+  <div class="client-name">Eason Stays</div>
+  <div class="client-meta">Source: Slack Support &nbsp;|&nbsp; Issues this week: 2 &nbsp;|&nbsp; Modules: Calendar, Channel Manager</div>
+  <div class="client-issue">
+    <h4><span class="badge critical">Critical</span> &nbsp; Multi-Calendar Not Showing Properties</h4>
+    <p style="font-size:13px; margin-top:6px;">The multi-calendar view loads but displays zero properties. Flagged as urgent by the client — this is a core daily operational tool for managing availability across their portfolio.</p>
+    <div class="cause-box"><strong>Possible Causes:</strong> Property filter state issue; API response failing silently; user permissions not loading property list; frontend rendering bug.</div>
+    <div class="rec-box"><strong>Recommendations:</strong> Immediate investigation — replicate in staging. Check browser console for errors. Verify API response includes property data. Provide workaround (individual property calendar) while resolving.</div>
+  </div>
+  <div class="client-issue">
+    <h4><span class="badge attention">Needs Attention</span> &nbsp; CuddlyNest Listing Onboarding Delay</h4>
+    <p style="font-size:13px; margin-top:6px;">CuddlyNest channel integration setup is significantly delayed. Client also flagged a general ticket backlog causing frustration.</p>
+    <div class="cause-box"><strong>Possible Causes:</strong> Support ticket volume exceeding capacity; CuddlyNest integration requiring manual steps; unclear prioritization in support queue.</div>
+    <div class="rec-box"><strong>Recommendations:</strong> Review support ticket backlog for this client. Prioritize CuddlyNest setup. Consider proactive communication with client on expected timeline.</div>
+  </div>
+</div>
+
+<!-- Map Short Stays -->
+<div class="client-section">
+  <div class="client-name">Map Short Stays</div>
+  <div class="client-meta">Source: Slack Migration &nbsp;|&nbsp; Issues this week: 3 &nbsp;|&nbsp; Modules: Payments, Calendar, Pricing</div>
+  <div class="client-issue">
+    <h4><span class="badge attention">Needs Attention</span> &nbsp; Booking.com Payment Showing Unpaid</h4>
+    <p style="font-size:13px; margin-top:6px;">BDC reservation payment status is stuck showing "unpaid" even though payment was received by Booking.com. Creates financial tracking confusion.</p>
+    <div class="cause-box"><strong>Possible Causes:</strong> Payment status webhook from BDC not received or processed; sync delay; mapping issue between BDC payment states and Boom statuses.</div>
+    <div class="rec-box"><strong>Recommendations:</strong> Check BDC payment notification logs. Verify webhook endpoint health. Manual status update as interim fix.</div>
+  </div>
+  <div class="client-issue">
+    <h4><span class="badge attention">Needs Attention</span> &nbsp; Airbnb Calendar Not Blocking Dates</h4>
+    <p style="font-size:13px; margin-top:6px;">When bookings are made on other channels, the Airbnb calendar is not being updated to block those dates. Direct double-booking risk.</p>
+    <div class="cause-box"><strong>Possible Causes:</strong> iCal sync delay or failure; Airbnb API availability update not triggered; channel manager sync interval too long.</div>
+    <div class="rec-box"><strong>Recommendations:</strong> Verify iCal/API sync status for affected listings. Force a manual sync. Check Airbnb connection health in channel manager.</div>
+  </div>
+  <div class="client-issue">
+    <h4><span class="badge attention">Needs Attention</span> &nbsp; Missing Prices on Listings</h4>
+    <p style="font-size:13px; margin-top:6px;">Certain date ranges on listings have no pricing set, making those dates unbookable.</p>
+    <div class="cause-box"><strong>Possible Causes:</strong> Dynamic pricing rules not covering all dates; pricing provider sync gap; seasonal pricing not configured for specific periods.</div>
+    <div class="rec-box"><strong>Recommendations:</strong> Review pricing rules for date coverage. Check dynamic pricing provider connection. Set fallback/default rates for uncovered dates.</div>
+  </div>
+</div>
+
+<!-- Biz Flats -->
+<div class="client-section">
+  <div class="client-name">Biz Flats</div>
+  <div class="client-meta">Source: Slack Migration &nbsp;|&nbsp; Issues this week: 4 &nbsp;|&nbsp; Modules: Operations, CRM/Messaging</div>
+  <div class="client-issue">
+    <h4><span class="badge critical">Critical</span> &nbsp; Cleaning Tasks Auto-Creating Without Reservations</h4>
+    <p style="font-size:13px; margin-top:6px;">Confirmed system bug — cleaning tasks are being automatically generated without any associated reservation. Creates phantom work orders.</p>
+    <div class="cause-box"><strong>Possible Causes:</strong> Task automation trigger firing without reservation validation; orphaned calendar events triggering cleaning rules; task template misconfiguration.</div>
+    <div class="rec-box"><strong>Recommendations:</strong> Engineering fix required — add reservation existence check before task creation. Audit and delete orphaned tasks. Notify affected clients.</div>
+  </div>
+  <div class="client-issue">
+    <h4><span class="badge attention">Needs Attention</span> &nbsp; Automated Messages Not Sending</h4>
+    <p style="font-size:13px; margin-top:6px;">Scheduled guest communications via automated messages are failing to deliver.</p>
+    <div class="cause-box"><strong>Possible Causes:</strong> Message queue processing failure; trigger conditions not matching; channel-specific delivery issues (email vs SMS vs OTA messaging).</div>
+    <div class="rec-box"><strong>Recommendations:</strong> Check message queue logs for errors. Verify trigger conditions on affected auto-messages. Test with a manual trigger.</div>
+  </div>
+  <div class="client-issue">
+    <h4><span class="badge attention">Needs Attention</span> &nbsp; BDC Message Delivery Variance</h4>
+    <p style="font-size:13px; margin-top:6px;">Messages sent to Booking.com guests are being delivered with inconsistent timing or not at all.</p>
+    <div class="cause-box"><strong>Possible Causes:</strong> Booking.com API rate limits; message queue prioritization; BDC messaging endpoint intermittent failures.</div>
+    <div class="rec-box"><strong>Recommendations:</strong> Monitor BDC messaging API response times. Check for message delivery confirmation. Consider retry logic improvements.</div>
+  </div>
+  <div class="client-issue">
+    <h4><span class="badge normal">Normal</span> &nbsp; WhatsApp Integration Timeline</h4>
+    <p style="font-size:13px; margin-top:6px;">Client requesting clarity on when WhatsApp Business integration will be ready.</p>
+    <div class="cause-box"><strong>Possible Causes:</strong> N/A — feature request/timeline inquiry.</div>
+    <div class="rec-box"><strong>Recommendations:</strong> Provide updated timeline. Share setup requirements so client can prepare.</div>
+  </div>
+</div>
+
+<!-- Designed VR -->
+<div class="client-section">
+  <div class="client-name">Designed VR</div>
+  <div class="client-meta">Source: Intercom &nbsp;|&nbsp; Issues this week: 2 &nbsp;|&nbsp; Modules: Channel Manager, Calendar</div>
+  <div class="client-issue">
+    <h4><span class="badge critical">Critical</span> &nbsp; VRBO Messages Not Received Through Boom</h4>
+    <p style="font-size:13px; margin-top:6px;">Guest messages sent through the VRBO platform are not appearing in the Boom inbox. Missed guest communications directly impact guest satisfaction and booking conversion.</p>
+    <div class="cause-box"><strong>Possible Causes:</strong> VRBO API integration messaging endpoint broken; webhook not configured for this client; message type not supported in current integration version.</div>
+    <div class="rec-box"><strong>Recommendations:</strong> Check VRBO API connection status. Verify messaging webhook configuration. Test with a direct VRBO message to confirm receipt path. Escalate if API-level issue.</div>
+  </div>
+  <div class="client-issue">
+    <h4><span class="badge critical">Critical</span> &nbsp; Calendar Blocked Unexpectedly</h4>
+    <p style="font-size:13px; margin-top:6px;">Calendar dates are being blocked automatically without any user action. Directly prevents bookings and loses revenue.</p>
+    <div class="cause-box"><strong>Possible Causes:</strong> Ghost calendar sync from a deactivated channel; iCal import pulling blocks from external calendar; system-generated maintenance block; API-level push from connected OTA.</div>
+    <div class="rec-box"><strong>Recommendations:</strong> Audit calendar event log for the blocked dates to identify source. Check all connected iCal feeds. Review channel manager sync history. Remove erroneous blocks immediately.</div>
+  </div>
+</div>
+
+<!-- Eden Villas Miami -->
+<div class="client-section">
+  <div class="client-name">Eden Villas Miami</div>
+  <div class="client-meta">Source: Intercom &nbsp;|&nbsp; Issues this week: 3 &nbsp;|&nbsp; Modules: API, Channel Manager</div>
+  <div class="client-issue">
+    <h4><span class="badge critical">Critical</span> &nbsp; Pricing API 500 Errors</h4>
+    <p style="font-size:13px; margin-top:6px;">Pricing API returning HTTP 500 server errors. Client cannot manage or update pricing through the system.</p>
+    <div class="cause-box"><strong>Possible Causes:</strong> Server-side exception in pricing engine; database query timeout; malformed request from client's specific configuration; infrastructure scaling issue.</div>
+    <div class="rec-box"><strong>Recommendations:</strong> Check API error logs immediately. Identify the specific endpoint and payload causing 500s. Deploy hotfix or roll back if recent deployment caused regression. Provide manual pricing update path in interim.</div>
+  </div>
+  <div class="client-issue">
+    <h4><span class="badge attention">Needs Attention</span> &nbsp; Booking.com Listing Mapped Incorrectly</h4>
+    <p style="font-size:13px; margin-top:6px;">Booking.com listing showing incorrect mapping — wrong unit or property details on the channel.</p>
+    <div class="cause-box"><strong>Possible Causes:</strong> Mapping done to wrong property ID during setup; BDC room/unit ID mismatch; channel manager configuration error.</div>
+    <div class="rec-box"><strong>Recommendations:</strong> Review and correct the BDC property mapping. Verify room type IDs match. Re-push listing content after correction.</div>
+  </div>
+  <div class="client-issue">
+    <h4><span class="badge normal">Normal</span> &nbsp; Hopper Quick Connect Username</h4>
+    <p style="font-size:13px; margin-top:6px;">Client needs Quick Connect credentials for Hopper channel setup.</p>
+    <div class="cause-box"><strong>Possible Causes:</strong> N/A — credential/setup request.</div>
+    <div class="rec-box"><strong>Recommendations:</strong> Provide Quick Connect credentials. Share setup documentation.</div>
+  </div>
+</div>
+
+<!-- Aliyah Homes -->
+<div class="client-section">
+  <div class="client-name">Aliyah Homes</div>
+  <div class="client-meta">Source: Slack Support &nbsp;|&nbsp; Issues this week: 3 &nbsp;|&nbsp; Modules: Channel Manager, Pricing, Operations</div>
+  <div class="client-issue">
+    <h4><span class="badge critical">Critical</span> &nbsp; Marriott Reservation Not Appearing in Boom</h4>
+    <p style="font-size:13px; margin-top:6px;">A reservation made on Marriott through Rental United is not syncing to Boom. Risk of double-booking.</p>
+    <div class="cause-box"><strong>Possible Causes:</strong> Rental United API sync failure; reservation format not recognized; webhook delivery failure from RU to Boom; property mapping issue on RU side.</div>
+    <div class="rec-box"><strong>Recommendations:</strong> Check Rental United sync logs. Verify property mapping. Manually import the reservation. Investigate RU webhook delivery status.</div>
+  </div>
+  <div class="client-issue">
+    <h4><span class="badge attention">Needs Attention</span> &nbsp; VAT Double Calculation</h4>
+    <p style="font-size:13px; margin-top:6px;">VAT is being applied twice on generated invoices, resulting in overcharges to guests.</p>
+    <div class="cause-box"><strong>Possible Causes:</strong> VAT configured at both property and company level; OTA already including VAT in rate; invoice template applying VAT on top of tax-inclusive rates.</div>
+    <div class="rec-box"><strong>Recommendations:</strong> Audit VAT configuration at all levels (company, property, channel). Check if OTA rates are tax-inclusive. Fix the double-application logic. Issue corrected invoices for affected reservations.</div>
+  </div>
+  <div class="client-issue">
+    <h4><span class="badge attention">Needs Attention</span> &nbsp; AI Task Comments Under Wrong Name</h4>
+    <p style="font-size:13px; margin-top:6px;">Notes added by AI tasks are showing incorrect author attribution. Also reported by Oaktree/Salwa via Intercom.</p>
+    <div class="cause-box"><strong>Possible Causes:</strong> AI task comment service using a shared or default user identity; user context not properly passed to comment creation API; session/token issue in AI module.</div>
+    <div class="rec-box"><strong>Recommendations:</strong> Investigate AI comment author assignment logic. Ensure correct user context is passed. Fix affects multiple clients — treat as system-wide bug.</div>
+  </div>
+</div>
+
+<!-- More Than Stays -->
+<div class="client-section">
+  <div class="client-name">More Than Stays</div>
+  <div class="client-meta">Source: Slack Support &amp; Intercom &nbsp;|&nbsp; Issues this week: 5 &nbsp;|&nbsp; Modules: Channel Manager, Payments, Guest Portal</div>
+  <div class="client-issue">
+    <h4><span class="badge attention">Needs Attention</span> &nbsp; TravelStaytion Channel Missing</h4>
+    <p style="font-size:13px; margin-top:6px;">TravelStaytion not available as a channel option in the channel manager. Blocking new distribution setup.</p>
+    <div class="cause-box"><strong>Possible Causes:</strong> Channel not yet integrated; feature flag not enabled for client; channel list not updated.</div>
+    <div class="rec-box"><strong>Recommendations:</strong> Confirm TravelStaytion integration availability. If available, enable for client. If not, provide timeline.</div>
+  </div>
+  <div class="client-issue">
+    <h4><span class="badge attention">Needs Attention</span> &nbsp; Processing Fee Cannot Be Removed</h4>
+    <p style="font-size:13px; margin-top:6px;">Processing fees on certain reservations cannot be removed or adjusted. Also reported for owner holiday blocks.</p>
+    <div class="cause-box"><strong>Possible Causes:</strong> Fee locked after invoice generation; UI not exposing edit controls for certain fee types; fee auto-applied by rule with no manual override.</div>
+    <div class="rec-box"><strong>Recommendations:</strong> Add manual override capability for processing fees. Review fee application rules for owner-blocked dates (should not apply). Fix for both regular reservations and owner holidays.</div>
+  </div>
+  <div class="client-issue">
+    <h4><span class="badge normal">Normal</span> &nbsp; Guest ID Photo Access</h4>
+    <p style="font-size:13px; margin-top:6px;">Client needs to view guest-uploaded ID photos from pre-check-in.</p>
+    <div class="cause-box"><strong>Possible Causes:</strong> Feature not exposed in current UI; permissions restricting access to guest documents.</div>
+    <div class="rec-box"><strong>Recommendations:</strong> Review guest portal settings for photo access. Provide instructions if feature exists. Log as feature request if not available.</div>
+  </div>
+  <div class="client-issue">
+    <h4><span class="badge normal">Normal</span> &nbsp; Guest Pre-Check-in Photo Deletion Concern</h4>
+    <p style="font-size:13px; margin-top:6px;">Client concerned about automatic deletion of guest-uploaded photos.</p>
+    <div class="cause-box"><strong>Possible Causes:</strong> Data retention policy auto-deleting after a period; GDPR compliance rules; unclear documentation on retention.</div>
+    <div class="rec-box"><strong>Recommendations:</strong> Clarify data retention policy for guest documents. Communicate timeline to client. Consider configurable retention periods.</div>
+  </div>
+  <div class="client-issue">
+    <h4><span class="badge normal">Normal</span> &nbsp; Processing Fee on Owner Holidays</h4>
+    <p style="font-size:13px; margin-top:6px;">Processing fees being applied to owner-blocked dates that shouldn't incur fees.</p>
+    <div class="cause-box"><strong>Possible Causes:</strong> Fee logic not differentiating between booking types and owner blocks; all calendar events treated equally for fee calculation.</div>
+    <div class="rec-box"><strong>Recommendations:</strong> Update fee logic to exclude owner-blocked dates from processing fee calculations. Refund incorrectly applied fees.</div>
+  </div>
+</div>
+
+<!-- Smith and Adams -->
+<div class="client-section">
+  <div class="client-name">Smith and Adams</div>
+  <div class="client-meta">Source: Intercom &nbsp;|&nbsp; Issues this week: 4 &nbsp;|&nbsp; Modules: CRM/Messaging, Operations, Calendar, Reporting</div>
+  <div class="client-issue">
+    <h4><span class="badge attention">Needs Attention</span> &nbsp; WhatsApp Template Not Showing</h4>
+    <p style="font-size:13px; margin-top:6px;">Approved WhatsApp Business templates not appearing in the template selector.</p>
+    <div class="cause-box"><strong>Possible Causes:</strong> Template approval status not synced from Meta; template cache stale; account not connected to correct WhatsApp Business number.</div>
+    <div class="rec-box"><strong>Recommendations:</strong> Refresh WhatsApp template sync. Verify Meta Business account template approvals. Check WhatsApp Business connection status.</div>
+  </div>
+  <div class="client-issue">
+    <h4><span class="badge attention">Needs Attention</span> &nbsp; Sales Figures Irregularities</h4>
+    <p style="font-size:13px; margin-top:6px;">Dashboard sales numbers not matching expected revenue. Data integrity concern.</p>
+    <div class="cause-box"><strong>Possible Causes:</strong> Cancelled reservations still counted; date range filter including/excluding wrong periods; currency conversion issue; pending vs confirmed reservation distinction.</div>
+    <div class="rec-box"><strong>Recommendations:</strong> Compare dashboard figures against raw reservation data. Check filter settings. Review calculation logic for the reported period.</div>
+  </div>
+  <div class="client-issue">
+    <h4><span class="badge attention">Needs Attention</span> &nbsp; Calendar Block Deletion Not Working</h4>
+    <p style="font-size:13px; margin-top:6px;">Existing calendar blocks cannot be removed through the UI.</p>
+    <div class="cause-box"><strong>Possible Causes:</strong> Block created by external source (iCal/OTA) and locked; UI delete action failing silently; permission issue on block type.</div>
+    <div class="rec-box"><strong>Recommendations:</strong> Identify block source. If external, remove from source. If internal, check delete API for errors. Provide admin-level delete as workaround.</div>
+  </div>
+  <div class="client-issue">
+    <h4><span class="badge normal">Normal</span> &nbsp; Task Completion Status Not Visible</h4>
+    <p style="font-size:13px; margin-top:6px;">Completed tasks not reflecting updated status in the task dashboard.</p>
+    <div class="cause-box"><strong>Possible Causes:</strong> UI state not refreshing after task update; task status API returning stale data; caching issue on frontend.</div>
+    <div class="rec-box"><strong>Recommendations:</strong> Verify task status update API works correctly. Check for frontend caching. Suggest page refresh as interim workaround.</div>
+  </div>
+</div>
+
+<!-- Verano Property -->
+<div class="client-section">
+  <div class="client-name">Verano Property</div>
+  <div class="client-meta">Source: Intercom &nbsp;|&nbsp; Issues this week: 2 &nbsp;|&nbsp; Modules: CRM/Messaging, Channel Manager</div>
+  <div class="client-issue">
+    <h4><span class="badge attention">Needs Attention</span> &nbsp; CRM Pictures Not Appearing in Chat</h4>
+    <p style="font-size:13px; margin-top:6px;">Images uploaded/shared via CRM guest chat are not rendering for guests.</p>
+    <div class="cause-box"><strong>Possible Causes:</strong> Image upload service failure; CDN/storage URL broken; file size or format restriction; guest-facing rendering bug.</div>
+    <div class="rec-box"><strong>Recommendations:</strong> Check image storage and CDN health. Test with different image formats/sizes. Verify guest-facing chat render logic.</div>
+  </div>
+  <div class="client-issue">
+    <h4><span class="badge attention">Needs Attention</span> &nbsp; Listing Descriptions Locked</h4>
+    <p style="font-size:13px; margin-top:6px;">Listing description fields are read-only — client cannot edit property descriptions.</p>
+    <div class="cause-box"><strong>Possible Causes:</strong> OTA sync locking descriptions after push; field-level permissions restricting edits; channel manager override protecting synced content.</div>
+    <div class="rec-box"><strong>Recommendations:</strong> Check if descriptions are locked due to active OTA sync. Provide unlock option or guidance on editing synced content. Review field permissions.</div>
+  </div>
+</div>
+
+<!-- Meir Steinberg -->
+<div class="client-section">
+  <div class="client-name">Meir Steinberg</div>
+  <div class="client-meta">Source: Intercom &nbsp;|&nbsp; Issues this week: 2 &nbsp;|&nbsp; Modules: Payments, Channel Manager</div>
+  <div class="client-issue">
+    <h4><span class="badge critical">Critical</span> &nbsp; Payment Balance Showing 0</h4>
+    <p style="font-size:13px; margin-top:6px;">Active bookings showing payment balance of 0 despite outstanding amounts. Financial risk.</p>
+    <div class="cause-box"><strong>Possible Causes:</strong> Payment record not linked to reservation; balance calculation logic error; payment status marked as complete when it's not; currency or rounding issue zeroing out small balances.</div>
+    <div class="rec-box"><strong>Recommendations:</strong> Audit payment records for affected reservations. Compare Stripe/payment processor records against Boom. Fix balance calculation. Mark as P1 for finance-impacting bug.</div>
+  </div>
+  <div class="client-issue">
+    <h4><span class="badge normal">Normal</span> &nbsp; Property Not Appearing in Listing View</h4>
+    <p style="font-size:13px; margin-top:6px;">One property missing from the listing management screen.</p>
+    <div class="cause-box"><strong>Possible Causes:</strong> Property status set to inactive/draft; filter hiding the property; data issue in property record.</div>
+    <div class="rec-box"><strong>Recommendations:</strong> Check property status and filters. Verify property record in database. Re-activate if needed.</div>
+  </div>
+</div>
+
+<!-- Dwell PropMan -->
+<div class="client-section">
+  <div class="client-name">Dwell PropMan</div>
+  <div class="client-meta">Source: Intercom &nbsp;|&nbsp; Issues this week: 2 &nbsp;|&nbsp; Modules: Reporting, Integrations</div>
+  <div class="client-issue">
+    <h4><span class="badge attention">Needs Attention</span> &nbsp; Owner Portal February Income Wrong</h4>
+    <p style="font-size:13px; margin-top:6px;">Owner portal displaying incorrect revenue calculations for February. Affects owner trust and payouts.</p>
+    <div class="cause-box"><strong>Possible Causes:</strong> Calculation including/excluding wrong reservation dates; pro-rata logic incorrect for month boundaries; currency conversion issue; pending reservations included/excluded incorrectly.</div>
+    <div class="rec-box"><strong>Recommendations:</strong> Compare owner portal figures against reservation data. Check date boundary logic for February. Provide corrected statement manually while investigating.</div>
+  </div>
+  <div class="client-issue">
+    <h4><span class="badge normal">Normal</span> &nbsp; Xero Integration Request</h4>
+    <p style="font-size:13px; margin-top:6px;">Client requesting Xero accounting software integration for financial sync.</p>
+    <div class="cause-box"><strong>Possible Causes:</strong> N/A — feature request.</div>
+    <div class="rec-box"><strong>Recommendations:</strong> Log as feature request. Provide current export options as interim solution. Evaluate Xero integration demand from other clients.</div>
+  </div>
+</div>
+
+<!-- Happiness -->
+<div class="client-section">
+  <div class="client-name">Happiness</div>
+  <div class="client-meta">Source: Slack Migration &nbsp;|&nbsp; Issues this week: 2 &nbsp;|&nbsp; Modules: CRM / Messaging</div>
+  <div class="client-issue">
+    <h4><span class="badge attention">Needs Attention</span> &nbsp; Auto-Message Save Fails at Character Limit</h4>
+    <p style="font-size:13px; margin-top:6px;">Automated message editor fails to save content when approaching character limits, without clear error messaging. Users lose their drafted content.</p>
+    <div class="cause-box"><strong>Possible Causes:</strong> Character limit validation happening server-side with no frontend feedback; API rejecting payload silently; textarea not enforcing max length.</div>
+    <div class="rec-box"><strong>Recommendations:</strong> Add frontend character counter with limit indicator. Show clear error message when limit is exceeded. Prevent data loss by preserving draft on failed save.</div>
+  </div>
+  <div class="client-issue">
+    <h4><span class="badge attention">Needs Attention</span> &nbsp; Inactive Auto-Messages Disappear from View</h4>
+    <p style="font-size:13px; margin-top:6px;">When auto-messages are deactivated, they vanish from the message list entirely. Users cannot find or re-enable them.</p>
+    <div class="cause-box"><strong>Possible Causes:</strong> Filter default only showing active messages; inactive status treated as soft-delete; no toggle to show inactive items in UI.</div>
+    <div class="rec-box"><strong>Recommendations:</strong> Add "Show inactive" filter/toggle to auto-message list. Ensure inactive messages are always accessible. UX improvement for message management.</div>
+  </div>
+</div>
+
+<!-- TLV2Go -->
+<div class="client-section">
+  <div class="client-name">TLV2Go</div>
+  <div class="client-meta">Source: Intercom &nbsp;|&nbsp; Issues this week: 1 &nbsp;|&nbsp; Modules: Pricing</div>
+  <div class="client-issue">
+    <h4><span class="badge attention">Needs Attention</span> &nbsp; Expedia Pricing Problem</h4>
+    <p style="font-size:13px; margin-top:6px;">Rates pushed to Expedia are not matching what was configured in Boom.</p>
+    <div class="cause-box"><strong>Possible Causes:</strong> Commission/markup calculation applied differently for Expedia; rate plan configuration mismatch; Expedia-specific pricing rules overriding base rates.</div>
+    <div class="rec-box"><strong>Recommendations:</strong> Compare Boom rate configuration against what appears on Expedia. Check rate plan and commission settings. Review Expedia-specific markup rules.</div>
+  </div>
+</div>
+
+<!-- Yulia -->
+<div class="client-section">
+  <div class="client-name">Yulia</div>
+  <div class="client-meta">Source: Intercom &nbsp;|&nbsp; Issues this week: 1 &nbsp;|&nbsp; Modules: Channel Manager</div>
+  <div class="client-issue">
+    <h4><span class="badge critical">Critical</span> &nbsp; Reservation Not Syncing After Channel Stop/Start</h4>
+    <p style="font-size:13px; margin-top:6px;">After stopping and restarting a channel connection, existing reservations are not syncing back. Double booking risk.</p>
+    <div class="cause-box"><strong>Possible Causes:</strong> Channel restart not triggering historical reservation sync; only new reservations pulled after reconnect; reservation import limited to future dates; API pagination not completing full sync.</div>
+    <div class="rec-box"><strong>Recommendations:</strong> Force a full reservation re-sync for the affected channel. Verify all existing reservations are present. Add full-sync capability to channel restart workflow.</div>
+  </div>
+</div>
+
+<!-- Jaime Gutiérrez -->
+<div class="client-section">
+  <div class="client-name">Jaime Guti&eacute;rrez</div>
+  <div class="client-meta">Source: Intercom &nbsp;|&nbsp; Issues this week: 1 &nbsp;|&nbsp; Modules: Payments</div>
+  <div class="client-issue">
+    <h4><span class="badge attention">Needs Attention</span> &nbsp; Expedia Virtual Card Charging Issue</h4>
+    <p style="font-size:13px; margin-top:6px;">Unable to charge Expedia-issued virtual credit cards through Boom's payment integration. Revenue collection impacted.</p>
+    <div class="cause-box"><strong>Possible Causes:</strong> Virtual card type not supported by payment processor; card data not being passed correctly; Expedia virtual card format requiring special handling; Stripe/payment gateway configuration issue.</div>
+    <div class="rec-box"><strong>Recommendations:</strong> Check payment processor logs for the failed charge attempts. Verify virtual card data format. Test with payment processor directly. May need special VCC handling in payment flow.</div>
+  </div>
+</div>
+
+<!-- Simple Life -->
+<div class="client-section">
+  <div class="client-name">Simple Life</div>
+  <div class="client-meta">Source: Slack Migration &nbsp;|&nbsp; Issues this week: 2 &nbsp;|&nbsp; Modules: Channel Manager</div>
+  <div class="client-issue">
+    <h4><span class="badge normal">Normal</span> &nbsp; Missing "Studio" Listing Type</h4>
+    <p style="font-size:13px; margin-top:6px;">The "Studio" property type is not available in the listing type dropdown during setup.</p>
+    <div class="cause-box"><strong>Possible Causes:</strong> Property type list not comprehensive; "Studio" not mapped to OTA-compatible types; configuration oversight.</div>
+    <div class="rec-box"><strong>Recommendations:</strong> Add "Studio" to property type options. Ensure mapping to equivalent OTA types (Airbnb, BDC, etc.).</div>
+  </div>
+  <div class="client-issue">
+    <h4><span class="badge normal">Normal</span> &nbsp; Confusing Age Restriction Amenities UI</h4>
+    <p style="font-size:13px; margin-top:6px;">Amenity settings for age restrictions are unclear and confusing for users.</p>
+    <div class="cause-box"><strong>Possible Causes:</strong> UI labels not descriptive enough; multiple overlapping settings; no tooltip or help text explaining options.</div>
+    <div class="rec-box"><strong>Recommendations:</strong> Improve UI labels and add tooltips. Consider consolidating age-related settings. Add help documentation link.</div>
+  </div>
+</div>
+
+<!-- Other Clients with Single Issues -->
+<div class="client-section">
+  <div class="client-name">Other Clients (Single Issues)</div>
+  <div class="client-meta">Various sources &nbsp;|&nbsp; Individual issue reports</div>
+  <div class="client-issue">
+    <h4><span class="badge normal">Normal</span> &nbsp; SeanRent — BDC Mapping Removal</h4>
+    <p style="font-size:13px; margin-top:6px;">Needs to unmap a listing from Booking.com. Admin action required.</p>
+  </div>
+  <div class="client-issue">
+    <h4><span class="badge normal">Normal</span> &nbsp; Zvika Losh — User Permissions Request</h4>
+    <p style="font-size:13px; margin-top:6px;">Requesting permission level changes for a user account. Routine admin request.</p>
+  </div>
+  <div class="client-issue">
+    <h4><span class="badge normal">Normal</span> &nbsp; Alisa Levin — Reservation Separation</h4>
+    <p style="font-size:13px; margin-top:6px;">Needs a multi-unit reservation split into individual reservations.</p>
+  </div>
+  <div class="client-issue">
+    <h4><span class="badge normal">Normal</span> &nbsp; Port City Haifa — Holiday Date Correction + Cash Payment + Listing Errors</h4>
+    <p style="font-size:13px; margin-top:6px;">Three minor issues: incorrect holiday dates in pricing calendar, need to record a cash payment, and listing detail errors to correct.</p>
+  </div>
+  <div class="client-issue">
+    <h4><span class="badge normal">Normal</span> &nbsp; MyBeach — Maintenance Block vs Reservation for Tax</h4>
+    <p style="font-size:13px; margin-top:6px;">Clarification needed on how maintenance blocks affect tax reporting vs regular reservations.</p>
+  </div>
+  <div class="client-issue">
+    <h4><span class="badge normal">Normal</span> &nbsp; Beachcomrent — Security Deposit Setup</h4>
+    <p style="font-size:13px; margin-top:6px;">Requesting setup guidance for security deposit collection via the guest portal.</p>
+  </div>
+  <div class="client-issue">
+    <h4><span class="badge normal">Normal</span> &nbsp; Furnished Club — Automated Message Instructions + Latch Integration</h4>
+    <p style="font-size:13px; margin-top:6px;">Missing documentation for auto-message setup. Latch smart lock integration in progress.</p>
+  </div>
+  <div class="client-issue">
+    <h4><span class="badge normal">Normal</span> &nbsp; Beach Apartment — Dynamic Pricing Setup + Gap Night Limitations</h4>
+    <p style="font-size:13px; margin-top:6px;">Needs help configuring dynamic pricing rules. Gap night feature has limitations that don't meet requirements.</p>
+  </div>
+</div>
+
+<hr class="divider">
+<p style="text-align:center; color:var(--rp-muted); font-size:12px; padding: 16px 0;">
+  Boom Weekly COO Report &mdash; Auto-generated from Slack &amp; Intercom data &mdash; Week of Feb 10&ndash;16, 2026
+</p>
+
+      </div><!-- /.container -->
+    </div><!-- /.report-root -->
+  </div><!-- /.main-content -->
+</div><!-- /.layout -->
+
+<script>
+  function toggleSidebar() {
+    const sb = document.getElementById('sidebar')
+    const btn = document.getElementById('toggle-btn')
+    const collapsed = sb.classList.toggle('collapsed')
+    btn.textContent = collapsed ? '▶' : '◀'
+    localStorage.setItem('sidebarCollapsed', collapsed)
+  }
+  function initSidebar() {
+    if (localStorage.getItem('sidebarCollapsed') === 'true') {
+      document.getElementById('sidebar').classList.add('collapsed')
+      document.getElementById('toggle-btn').textContent = '▶'
+    }
+  }
+  initSidebar()
+
+  fetch('/api/me').then(r => {
+    if (!r.ok) { window.location.href = '/login'; return null }
+    return r.json()
+  }).then(u => {
+    if (!u) return
+    document.getElementById('nav-user').textContent = u.username
+    const badge = document.getElementById('role-badge')
+    badge.textContent = u.role
+    badge.className = 'role-badge ' + u.role
+  })
+</script>
+</body>
+</html>
