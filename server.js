@@ -9,13 +9,14 @@ const PORT = process.env.PORT || 3002
 // ─── Credentials ─────────────────────────────────────────────────────────────
 // Set VIEWER_USER, VIEWER_PASS, ADMIN_USER, ADMIN_PASS in Railway env vars.
 // The values below are defaults for local development only.
+const _env = process.env
 const USERS = {
-  [process.env.VIEWER_USER || 'viewer']: {
-    password: process.env.VIEWER_PASS || 'viewer123',
+  [_env['VIEWER_USER'] || 'viewer']: {
+    password: _env['VIEWER_PASS'] || 'viewer123',
     role: 'viewer'
   },
-  [process.env.ADMIN_USER || 'admin']: {
-    password: process.env.ADMIN_PASS || 'admin123',
+  [_env['ADMIN_USER'] || 'admin']: {
+    password: _env['ADMIN_PASS'] || 'admin123',
     role: 'admin'
   }
 }
@@ -24,7 +25,7 @@ const USERS = {
 app.use(express.json())
 app.use(express.urlencoded({ extended: true }))
 app.use(session({
-  secret: process.env.SESSION_SECRET || 'boom-report-secret-change-this',
+  secret: _env['SESSION_SECRET'] || 'boom-report-secret-change-this',
   resave: false,
   saveUninitialized: false,
   cookie: { maxAge: 24 * 60 * 60 * 1000 }
