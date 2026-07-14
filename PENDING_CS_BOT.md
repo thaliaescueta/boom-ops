@@ -41,7 +41,7 @@ first, and each row gets a visual urgency tier:
 |-----|----------|---------|-------|
 | `GITHUB_TOKEN` (or `GH_TOKEN`) | yes | — | Needs Projects (read) + Issues/Contents (read). Classic PAT: `read:project` + `repo`. |
 | `GITHUB_PROJECT_OWNER` | no | `designedvr` | Org/user that owns the board. |
-| `GITHUB_PROJECT_NUMBER` | yes | — | The number in the board URL: `github.com/orgs/designedvr/projects/<N>`. |
+| `GITHUB_PROJECT_NUMBER` | no | `2` | The number in the board URL: `github.com/orgs/designedvr/projects/2` (DEV Team Planning). |
 | `GITHUB_PROJECT_OWNER_TYPE` | no | auto | `org` or `user`; blank auto-detects. |
 | `GITHUB_STATUS_FIELD` | no | `Status` | Single-select field name on the board. |
 | `PENDING_CS_STATUS` | no | `Pending CS` | The status option to report on. |
