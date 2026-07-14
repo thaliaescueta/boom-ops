@@ -47,7 +47,14 @@ async function main() {
     (report.unassigned.count ? `, ${report.unassigned.count} unassigned.` : '.'))
 
   if (dryRun) {
-    console.log('\n--- DRY RUN (not posting) ---\n' + cs.formatSlackMessage(report, cfg).text)
+    const preview = cfg.output === 'canvas' ? cs.buildCanvasMarkdown(report, cfg) : cs.formatSlackMessage(report, cfg).text
+    console.log('\n--- DRY RUN (not posting) ---\n' + preview)
+    return
+  }
+
+  if (cfg.output === 'canvas') {
+    const result = await cs.postCanvas(report, cfg)
+    console.log(`[pending-cs] channel canvas ${result.created ? 'created' : 'updated'} (${result.canvasId}).`)
     return
   }
 
