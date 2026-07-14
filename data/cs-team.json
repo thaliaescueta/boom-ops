@@ -1,16 +1,25 @@
 {
-  "_comment": "Maps GitHub login -> Slack member id so the Pending CS daily report can @mention the real person. Slack ids below are the live #boom-ninjas members; the githubLogin values are best-guesses and MUST be corrected to each teammate's actual GitHub username for the mentions to line up with ticket assignees. Any assignee without an entry here falls back to plain '@<github-login>' text (no notification).",
+  "_comment": "Maps GitHub login -> Slack member id so the Pending CS daily report can @mention the real person. Logins below were taken from the actual assignees of open 'Pending CS' tickets on the designedvr DEV Team planning board (project #2), matched to Slack member ids in the Boom workspace. Add new teammates here as needed. Any assignee without an entry falls back to plain '@<github-login>' text (no notification).",
   "members": [
-    { "githubLogin": "cindy", "slackId": "U08QXCQL2S2", "name": "Cindy Asis", "role": "Customer Support Specialist" },
-    { "githubLogin": "din", "slackId": "U096E656PMG", "name": "Din (Geraldine Abarra)", "role": "Customer Support Specialist" },
-    { "githubLogin": "patricia", "slackId": "U09EEPB8L7K", "name": "Patricia Camille Alvarez", "role": "Customer Support Specialist" },
-    { "githubLogin": "risse", "slackId": "U09HFJHHVD3", "name": "Risse (Clarissa Rosello)", "role": "Customer Support Specialist" },
-    { "githubLogin": "lojan", "slackId": "U09L30A31M3", "name": "Lojan Ranara", "role": "Customer Support Specialist" },
-    { "githubLogin": "winky", "slackId": "U0A4054D7FD", "name": "Winky Labula", "role": "Customer Support Specialist" },
-    { "githubLogin": "jazziel", "slackId": "U0BES4YS57Z", "name": "Jazziel An Ranara", "role": "Customer Support Specialist" },
-    { "githubLogin": "giselle", "slackId": "U0BENE74M7G", "name": "Giselle", "role": "Customer Support Specialist" },
-    { "githubLogin": "sab", "slackId": "U0BD66SL2FN", "name": "Sab", "role": "Customer Support Specialist" },
-    { "githubLogin": "sharon", "slackId": "U09L4AH8YVC", "name": "Sharon Nets", "role": "Head of Customer Success" },
-    { "githubLogin": "anfisa", "slackId": "U08L0FMTJPL", "name": "Anfisa Makedon", "role": "VP of Customer Success" }
+    { "githubLogin": "patricia-alvarez", "slackId": "U09EEPB8L7K", "name": "Patricia Camille Alvarez" },
+    { "githubLogin": "risserosello", "slackId": "U09HFJHHVD3", "name": "Risse (Clarissa Rosello)" },
+    { "githubLogin": "winky-labula", "slackId": "U0A4054D7FD", "name": "Winky Labula" },
+    { "githubLogin": "lojanboom", "slackId": "U09L30A31M3", "name": "Lojan Ranara" },
+    { "githubLogin": "JoshGalvez", "slackId": "U09JSNU9H1B", "name": "Josh (Raven) Galvez" },
+    { "githubLogin": "sherrygustafson", "slackId": "U0AE9TP0GU9", "name": "Sherry Gustafson" },
+    { "githubLogin": "Anfisa-Makedon", "slackId": "U08L0FMTJPL", "name": "Anfisa Makedon" },
+    { "githubLogin": "sharonnets", "slackId": "U09L4AH8YVC", "name": "Sharon Nets" },
+    { "githubLogin": "OrBoomNow", "slackId": "U09RQCDJY5U", "name": "Or Martonovitch" },
+    { "githubLogin": "guytapeta", "slackId": "U05SAR4V8G3", "name": "Guy Tapeta" },
+    { "githubLogin": "marlon-a11y", "slackId": "U0AFBJA7DFY", "name": "Marlon Albos" },
+    { "githubLogin": "NitzanAfek", "slackId": "U06LDHUJABZ", "name": "Nitzan Afek" },
+    { "githubLogin": "mgoldboi", "slackId": "U061HA1FKHU", "name": "Moran Goldboim" },
+    { "githubLogin": "stasBoom", "slackId": "U05V98SBQ4A", "name": "Stas" },
+    { "githubLogin": "chaimsalzer", "slackId": "U0611KDUR4N", "name": "Chaim Salzer" },
+    { "githubLogin": "anton-boom", "slackId": "U089DKLD4N6", "name": "Anton Kalinin" },
+    { "githubLogin": "serhii-boomnow", "slackId": "U06FMDPD01W", "name": "Serhii" },
+    { "githubLogin": "denis-polulyakh", "slackId": "U0A2L73PNEM", "name": "Denis Polulyakh" },
+    { "githubLogin": "yuvalic", "slackId": "U0A1A9WQ1FD", "name": "Yuval" },
+    { "githubLogin": "sagiboom", "slackId": "U0A5SDTLHPZ", "name": "Sagi" }
   ]
 }

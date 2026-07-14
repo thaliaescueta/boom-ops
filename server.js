@@ -159,8 +159,10 @@ app.get('/api/pending-cs', requireAuth, async (req, res) => {
     channel: cfg.channel
   }
   try {
-    const wantSample = req.query.sample === '1' || !meta.githubConfigured
-    const report = wantSample ? pendingCs.sampleReport() : await pendingCs.generateReport(cfg)
+    // Live fetch scans the whole project board (~2 min), so only do it when
+    // explicitly asked (?live=1). Default to fast sample data for page loads.
+    const wantLive = req.query.live === '1' && meta.githubConfigured
+    const report = wantLive ? await pendingCs.generateReport(cfg) : pendingCs.sampleReport()
     res.json({ ...meta, sample: Boolean(report.sample), report })
   } catch (err) {
     console.error('[pending-cs] preview failed:', err.message)

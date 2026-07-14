@@ -32,8 +32,36 @@ first, and each row gets a visual urgency tier:
 |------|------|
 | `lib/pending-cs.js` | Fetch (GitHub Projects v2 GraphQL), aggregate, tier, format & post (Slack). Pure helpers are unit-testable. |
 | `data/cs-team.json` | Maps GitHub login → Slack member id so mentions notify the real person. |
-| `public/pending-cs.html` | Portal preview page (`/pending-cs`) with a "Send to Slack now" button (admin). |
+| `scripts/send-pending-cs.js` | Standalone one-shot runner (used by GitHub Actions / any cron). |
+| `.github/workflows/pending-cs-daily.yml` | Serverless daily schedule (GitHub Actions). |
+| `public/pending-cs.html` | Portal preview page (`/pending-cs`) with "Load live" + "Send to Slack now" (admin). |
 | `server.js` | `node-cron` 9 AM schedule + `/api/pending-cs` (preview) and `/api/pending-cs/send` (manual). |
+
+## How it runs — pick ONE
+
+The daily post can be driven two ways. **Enable only one**, or the report posts twice.
+
+### Option A — GitHub Actions (recommended, no server needed)
+`.github/workflows/pending-cs-daily.yml` runs on a schedule. Add these to the
+repo (**Settings → Secrets and variables → Actions**):
+- Secret `PENDING_CS_GITHUB_TOKEN` — PAT with Projects + Issues read on `designedvr`.
+- Secret `SLACK_BOT_TOKEN` **or** `SLACK_WEBHOOK_URL`.
+- (optional) Variable `SLACK_CS_CHANNEL` — defaults to #boom-ninjas.
+
+It fires at 06:00 **and** 07:00 UTC and uses an hour guard so it posts exactly
+once at 09:00 Israel time year-round (handles daylight saving). Use the **Run
+workflow** button for an immediate test. Do **not** also set the Railway env
+vars below (or set `PENDING_CS_ENABLED=false` there) to avoid double posts.
+
+### Option B — Railway (the existing portal server)
+The portal's built-in `node-cron` scheduler auto-enables once GitHub + Slack env
+vars are set (see table below). This keeps the `/pending-cs` preview page and
+the **Send to #boom-ninjas** button live, but depends on the server staying up.
+
+> The live fetch scans the whole DEV Team planning board (~8.8k items, no
+> server-side field filter in the Projects v2 API), so a run takes ~2 minutes.
+> Fine for a daily job; the portal page therefore loads sample data by default
+> and fetches live only when you click **Load live**.
 
 ## Configuration (Railway env vars)
 

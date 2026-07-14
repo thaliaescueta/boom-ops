@@ -142,7 +142,8 @@
         <div class="brand">BOOM <em>·</em> Pending CS — Daily Report</div>
         <div class="tb-r">
           <span class="tb-date" id="hdr-date"></span>
-          <button class="btn" onclick="load()">↻ Refresh</button>
+          <button class="btn" onclick="load(false)">🧪 Sample</button>
+          <button class="btn" id="liveBtn" onclick="load(true)">🔄 Load live (~2 min)</button>
           <button class="btn primary" id="sendBtn" onclick="sendNow()">📣 Send to #boom-ninjas</button>
         </div>
       </div>
@@ -207,10 +208,15 @@ function refreshSendBtn() {
   else btn.title = 'Post the live report to Slack now'
 }
 
-function load() {
-  document.getElementById('table-card').innerHTML = '<div class="empty">Loading…</div>'
-  fetch('/api/pending-cs').then(r => r.json()).then(render).catch(e => {
+function load(live) {
+  const liveBtn = document.getElementById('liveBtn')
+  document.getElementById('table-card').innerHTML =
+    '<div class="empty">' + (live ? 'Scanning the DEV Team planning board… this takes up to ~2 minutes.' : 'Loading…') + '</div>'
+  if (live && liveBtn) { liveBtn.disabled = true; liveBtn.textContent = '⏳ Loading live…' }
+  fetch('/api/pending-cs' + (live ? '?live=1' : '')).then(r => r.json()).then(render).catch(e => {
     document.getElementById('table-card').innerHTML = '<div class="empty">Failed to load: ' + esc(e.message) + '</div>'
+  }).finally(() => {
+    if (liveBtn) { liveBtn.disabled = false; liveBtn.textContent = '🔄 Load live (~2 min)' }
   })
 }
 
@@ -299,7 +305,7 @@ function sendNow() {
     .finally(() => { refreshSendBtn() })
 }
 
-load()
+load(false)
 </script>
 </body>
 </html>
