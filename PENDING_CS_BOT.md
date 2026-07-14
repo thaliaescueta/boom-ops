@@ -8,23 +8,24 @@ the team can keep their queue under control.
 > Because "Pending CS" is a Projects v2 single-select **Status** field (not a
 > label), the tickets are fetched through GitHub's **GraphQL** Projects v2 API.
 
-For each ninja the report shows:
+The report is a **per-ticket table**, one row per open Pending CS ticket:
 
-- **@mention** of the person
-- **Number** of open Pending CS tickets assigned to them
-- **Oldest** ticket age (days since it was assigned)
-- **Average** age of their pending tickets
+- **GitHub ticket** — clickable `#number + title`
+- **Assignee(s)** — @mentioned (unassigned tickets are grouped separately)
+- **Age** — days since the ticket was created
 
-Rows are sorted highest → lowest priority (most tickets first, then oldest
-backlog). The **top row is highlighted** (👑) as the person who needs attention
-first, and each row gets a visual urgency tier:
+Rows are sorted oldest-first (most urgent at the top, 👑), and each row gets a
+visual urgency tier by age:
 
 | Tier | Marker | Default trigger |
 |------|--------|-----------------|
-| Critical | 🔴 | oldest ≥ 7 days **or** ≥ 8 tickets |
-| High | 🟠 | oldest ≥ 4 days **or** ≥ 5 tickets |
-| Medium | 🟡 | oldest ≥ 2 days **or** ≥ 2 tickets |
-| Healthy | 🟢 | everything else |
+| Critical | 🔴 | age ≥ 7 days |
+| High | 🟠 | age ≥ 4 days |
+| Medium | 🟡 | age ≥ 2 days |
+| Healthy | 🟢 | newer than 2 days |
+
+Set `PENDING_CS_AGE_FROM=assignment` to measure age from when the ticket was
+assigned (via the GitHub timeline) instead of when it was created.
 
 ## Pieces
 

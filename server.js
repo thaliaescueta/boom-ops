@@ -178,7 +178,7 @@ app.post('/api/pending-cs/send', requireAdmin, async (_req, res) => {
   try {
     const { report, result } = await pendingCs.runDailyReport(cfg)
     console.log(`[pending-cs] manual send by ${_req.session.user.username} → ${report.totalTickets} tickets`)
-    res.json({ success: true, via: result.via, totalTickets: report.totalTickets, totalAssignees: report.totalAssignees })
+    res.json({ success: true, via: result.via, totalTickets: report.totalTickets, unassignedCount: report.unassignedCount })
   } catch (err) {
     console.error('[pending-cs] manual send failed:', err.message)
     res.status(502).json({ error: err.message })
@@ -202,7 +202,7 @@ app.use(express.static(path.join(__dirname, 'public')))
   cron.schedule(cfg.schedule, async () => {
     try {
       const { report } = await pendingCs.runDailyReport(cfg)
-      console.log(`[pending-cs] daily report posted → ${report.totalTickets} tickets across ${report.totalAssignees} ninjas.`)
+      console.log(`[pending-cs] daily report posted → ${report.totalTickets} tickets (${report.unassignedCount} unassigned).`)
     } catch (err) {
       console.error('[pending-cs] daily report failed:', err.message)
     }
