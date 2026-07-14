@@ -1,8 +1,12 @@
 # Pending CS — Daily Report Bot
 
-Every morning the bot reads the open GitHub tickets that carry the **Pending CS**
-status, groups them by assignee, and posts a clear urgency table to the
-**#boom-ninjas** Slack channel so the team can keep their queue under control.
+Every morning the bot reads the open GitHub tickets whose **Status = Pending CS**
+on the **DEV Team Planning** Projects v2 board (org `designedvr`), groups them by
+assignee, and posts a clear urgency table to the **#boom-ninjas** Slack channel so
+the team can keep their queue under control.
+
+> Because "Pending CS" is a Projects v2 single-select **Status** field (not a
+> label), the tickets are fetched through GitHub's **GraphQL** Projects v2 API.
 
 For each ninja the report shows:
 
@@ -26,7 +30,7 @@ first, and each row gets a visual urgency tier:
 
 | File | Role |
 |------|------|
-| `lib/pending-cs.js` | Fetch (GitHub), aggregate, tier, format & post (Slack). Pure helpers are unit-testable. |
+| `lib/pending-cs.js` | Fetch (GitHub Projects v2 GraphQL), aggregate, tier, format & post (Slack). Pure helpers are unit-testable. |
 | `data/cs-team.json` | Maps GitHub login → Slack member id so mentions notify the real person. |
 | `public/pending-cs.html` | Portal preview page (`/pending-cs`) with a "Send to Slack now" button (admin). |
 | `server.js` | `node-cron` 9 AM schedule + `/api/pending-cs` (preview) and `/api/pending-cs/send` (manual). |
@@ -35,9 +39,12 @@ first, and each row gets a visual urgency tier:
 
 | Var | Required | Default | Notes |
 |-----|----------|---------|-------|
-| `GITHUB_TOKEN` (or `GH_TOKEN`) | yes | — | Read access to the repo that holds CS tickets. |
-| `GITHUB_REPO` | yes | — | `owner/repo` of the tickets repo. |
-| `PENDING_CS_LABEL` | no | `Pending CS` | Label that marks the status. |
+| `GITHUB_TOKEN` (or `GH_TOKEN`) | yes | — | Needs Projects (read) + Issues/Contents (read). Classic PAT: `read:project` + `repo`. |
+| `GITHUB_PROJECT_OWNER` | no | `designedvr` | Org/user that owns the board. |
+| `GITHUB_PROJECT_NUMBER` | yes | — | The number in the board URL: `github.com/orgs/designedvr/projects/<N>`. |
+| `GITHUB_PROJECT_OWNER_TYPE` | no | auto | `org` or `user`; blank auto-detects. |
+| `GITHUB_STATUS_FIELD` | no | `Status` | Single-select field name on the board. |
+| `PENDING_CS_STATUS` | no | `Pending CS` | The status option to report on. |
 | `PENDING_CS_AGE_FROM` | no | `assignment` | `assignment` (uses the assign event) or `created`. |
 | `SLACK_BOT_TOKEN` | yes* | — | `xoxb-…` — preferred; needed for real @mentions. Scopes: `chat:write`. |
 | `SLACK_WEBHOOK_URL` | yes* | — | Incoming-webhook fallback if no bot token. |
@@ -52,7 +59,9 @@ first, and each row gets a visual urgency tier:
 
 ## Finishing setup
 
-1. Set the env vars above in Railway.
+1. Set the env vars above in Railway — at minimum `GITHUB_TOKEN`,
+   `GITHUB_PROJECT_NUMBER`, and a Slack credential. Find the project number in
+   the board URL (`github.com/orgs/designedvr/projects/<N>`).
 2. **Fix `data/cs-team.json`** — the Slack ids are the live #boom-ninjas members,
    but the `githubLogin` values are placeholders. Replace each with the
    teammate's actual GitHub username so mentions line up with ticket assignees.

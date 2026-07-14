@@ -171,7 +171,7 @@ app.get('/api/pending-cs', requireAuth, async (req, res) => {
 // Manual "send to Slack now" — admin only.
 app.post('/api/pending-cs/send', requireAdmin, async (_req, res) => {
   const cfg = pendingCs.getConfig()
-  if (!pendingCs.isGithubConfigured(cfg)) return res.status(400).json({ error: 'GitHub is not configured (GITHUB_TOKEN / GITHUB_REPO).' })
+  if (!pendingCs.isGithubConfigured(cfg)) return res.status(400).json({ error: 'GitHub is not configured (GITHUB_TOKEN / GITHUB_PROJECT_OWNER / GITHUB_PROJECT_NUMBER).' })
   if (!pendingCs.isSlackConfigured(cfg)) return res.status(400).json({ error: 'Slack is not configured (SLACK_BOT_TOKEN or SLACK_WEBHOOK_URL).' })
   try {
     const { report, result } = await pendingCs.runDailyReport(cfg)
@@ -190,7 +190,7 @@ app.use(express.static(path.join(__dirname, 'public')))
 ;(function schedulePendingCs() {
   const cfg = pendingCs.getConfig()
   if (!pendingCs.isEnabled(cfg)) {
-    console.log('[pending-cs] scheduler idle (set GITHUB_TOKEN/GITHUB_REPO + Slack creds, or PENDING_CS_ENABLED=true).')
+    console.log('[pending-cs] scheduler idle (set GITHUB_TOKEN + GITHUB_PROJECT_OWNER/NUMBER + Slack creds, or PENDING_CS_ENABLED=true).')
     return
   }
   if (!cron.validate(cfg.schedule)) {

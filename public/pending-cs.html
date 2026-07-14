@@ -224,7 +224,7 @@ function render(data) {
   if (data.error) {
     banner.innerHTML = '<div class="banner err">⚠️ Live fetch failed (' + esc(data.error) + '). Showing sample data.</div>'
   } else if (data.sample) {
-    banner.innerHTML = '<div class="banner sample">🧪 Sample preview — set <code>GITHUB_TOKEN</code> &amp; <code>GITHUB_REPO</code> on the server to show live Pending CS tickets.'
+    banner.innerHTML = '<div class="banner sample">🧪 Sample preview — set <code>GITHUB_TOKEN</code> &amp; <code>GITHUB_PROJECT_NUMBER</code> on the server to show live Pending CS tickets.'
       + (data.scheduleEnabled ? '' : ' Scheduler is currently idle.') + '</div>'
   } else {
     banner.innerHTML = '<div class="banner live">🟢 Live data from <b>' + esc(rep.repo) + '</b> · label "' + esc(rep.label) + '"'
