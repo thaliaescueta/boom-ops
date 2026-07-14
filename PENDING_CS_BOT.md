@@ -1,0 +1,64 @@
+# Pending CS — Daily Report Bot
+
+Every morning the bot reads the open GitHub tickets that carry the **Pending CS**
+status, groups them by assignee, and posts a clear urgency table to the
+**#boom-ninjas** Slack channel so the team can keep their queue under control.
+
+For each ninja the report shows:
+
+- **@mention** of the person
+- **Number** of open Pending CS tickets assigned to them
+- **Oldest** ticket age (days since it was assigned)
+- **Average** age of their pending tickets
+
+Rows are sorted highest → lowest priority (most tickets first, then oldest
+backlog). The **top row is highlighted** (👑) as the person who needs attention
+first, and each row gets a visual urgency tier:
+
+| Tier | Marker | Default trigger |
+|------|--------|-----------------|
+| Critical | 🔴 | oldest ≥ 7 days **or** ≥ 8 tickets |
+| High | 🟠 | oldest ≥ 4 days **or** ≥ 5 tickets |
+| Medium | 🟡 | oldest ≥ 2 days **or** ≥ 2 tickets |
+| Healthy | 🟢 | everything else |
+
+## Pieces
+
+| File | Role |
+|------|------|
+| `lib/pending-cs.js` | Fetch (GitHub), aggregate, tier, format & post (Slack). Pure helpers are unit-testable. |
+| `data/cs-team.json` | Maps GitHub login → Slack member id so mentions notify the real person. |
+| `public/pending-cs.html` | Portal preview page (`/pending-cs`) with a "Send to Slack now" button (admin). |
+| `server.js` | `node-cron` 9 AM schedule + `/api/pending-cs` (preview) and `/api/pending-cs/send` (manual). |
+
+## Configuration (Railway env vars)
+
+| Var | Required | Default | Notes |
+|-----|----------|---------|-------|
+| `GITHUB_TOKEN` (or `GH_TOKEN`) | yes | — | Read access to the repo that holds CS tickets. |
+| `GITHUB_REPO` | yes | — | `owner/repo` of the tickets repo. |
+| `PENDING_CS_LABEL` | no | `Pending CS` | Label that marks the status. |
+| `PENDING_CS_AGE_FROM` | no | `assignment` | `assignment` (uses the assign event) or `created`. |
+| `SLACK_BOT_TOKEN` | yes* | — | `xoxb-…` — preferred; needed for real @mentions. Scopes: `chat:write`. |
+| `SLACK_WEBHOOK_URL` | yes* | — | Incoming-webhook fallback if no bot token. |
+| `SLACK_CS_CHANNEL` | no | `C09JYCQ2DLG` (#boom-ninjas) | Channel id or name. |
+| `PENDING_CS_TZ` | no | `Asia/Manila` | Timezone for the schedule. |
+| `PENDING_CS_SCHEDULE` | no | `0 9 * * *` | Cron expression (9:00 AM). |
+| `PENDING_CS_ENABLED` | no | auto | `true`/`false` to force the scheduler on/off. Auto-on when GitHub + Slack are both set. |
+| `PENDING_CS_CRIT_DAYS` / `_HIGH_DAYS` / `_MED_DAYS` | no | 7 / 4 / 2 | Age thresholds. |
+| `PENDING_CS_CRIT_COUNT` / `_HIGH_COUNT` / `_MED_COUNT` | no | 8 / 5 / 2 | Count thresholds. |
+
+\* Provide **either** `SLACK_BOT_TOKEN` or `SLACK_WEBHOOK_URL`.
+
+## Finishing setup
+
+1. Set the env vars above in Railway.
+2. **Fix `data/cs-team.json`** — the Slack ids are the live #boom-ninjas members,
+   but the `githubLogin` values are placeholders. Replace each with the
+   teammate's actual GitHub username so mentions line up with ticket assignees.
+   Any assignee without an entry falls back to plain `@login` text (no ping).
+3. Open **`/pending-cs`** in the portal to preview. Admins can hit
+   **Send to #boom-ninjas** to post immediately without waiting for 9 AM.
+
+Until GitHub is configured the preview page and API return **sample data** so
+the portal always renders.

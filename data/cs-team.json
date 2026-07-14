@@ -1,0 +1,16 @@
+{
+  "_comment": "Maps GitHub login -> Slack member id so the Pending CS daily report can @mention the real person. Slack ids below are the live #boom-ninjas members; the githubLogin values are best-guesses and MUST be corrected to each teammate's actual GitHub username for the mentions to line up with ticket assignees. Any assignee without an entry here falls back to plain '@<github-login>' text (no notification).",
+  "members": [
+    { "githubLogin": "cindy", "slackId": "U08QXCQL2S2", "name": "Cindy Asis", "role": "Customer Support Specialist" },
+    { "githubLogin": "din", "slackId": "U096E656PMG", "name": "Din (Geraldine Abarra)", "role": "Customer Support Specialist" },
+    { "githubLogin": "patricia", "slackId": "U09EEPB8L7K", "name": "Patricia Camille Alvarez", "role": "Customer Support Specialist" },
+    { "githubLogin": "risse", "slackId": "U09HFJHHVD3", "name": "Risse (Clarissa Rosello)", "role": "Customer Support Specialist" },
+    { "githubLogin": "lojan", "slackId": "U09L30A31M3", "name": "Lojan Ranara", "role": "Customer Support Specialist" },
+    { "githubLogin": "winky", "slackId": "U0A4054D7FD", "name": "Winky Labula", "role": "Customer Support Specialist" },
+    { "githubLogin": "jazziel", "slackId": "U0BES4YS57Z", "name": "Jazziel An Ranara", "role": "Customer Support Specialist" },
+    { "githubLogin": "giselle", "slackId": "U0BENE74M7G", "name": "Giselle", "role": "Customer Support Specialist" },
+    { "githubLogin": "sab", "slackId": "U0BD66SL2FN", "name": "Sab", "role": "Customer Support Specialist" },
+    { "githubLogin": "sharon", "slackId": "U09L4AH8YVC", "name": "Sharon Nets", "role": "Head of Customer Success" },
+    { "githubLogin": "anfisa", "slackId": "U08L0FMTJPL", "name": "Anfisa Makedon", "role": "VP of Customer Success" }
+  ]
+}

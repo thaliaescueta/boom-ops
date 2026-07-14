@@ -1,7 +1,9 @@
 const express = require('express')
 const session = require('express-session')
+const cron = require('node-cron')
 const fs = require('fs')
 const path = require('path')
+const pendingCs = require('./lib/pending-cs')
 
 const app = express()
 const PORT = process.env.PORT || 3002
@@ -87,6 +89,10 @@ app.get('/weekly-report', requireAuth, (_req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'weekly-report.html'))
 })
 
+app.get('/pending-cs', requireAuth, (_req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'pending-cs.html'))
+})
+
 // ─── API ──────────────────────────────────────────────────────────────────────
 app.get('/api/me', (req, res) => {
   if (!req.session.user) return res.status(401).json({ error: 'Not logged in' })
@@ -139,8 +145,68 @@ app.delete('/api/clients/:id', requireAdmin, (req, res) => {
   res.json({ success: true })
 })
 
+// ─── Pending CS bot API ─────────────────────────────────────────────────────
+// Report data for the preview page. Falls back to sample data when GitHub
+// isn't configured (or ?sample=1 is passed) so the portal always renders.
+app.get('/api/pending-cs', requireAuth, async (req, res) => {
+  const cfg = pendingCs.getConfig()
+  const meta = {
+    githubConfigured: pendingCs.isGithubConfigured(cfg),
+    slackConfigured: pendingCs.isSlackConfigured(cfg),
+    scheduleEnabled: pendingCs.isEnabled(cfg),
+    schedule: cfg.schedule,
+    tz: cfg.tz,
+    channel: cfg.channel
+  }
+  try {
+    const wantSample = req.query.sample === '1' || !meta.githubConfigured
+    const report = wantSample ? pendingCs.sampleReport() : await pendingCs.generateReport(cfg)
+    res.json({ ...meta, sample: Boolean(report.sample), report })
+  } catch (err) {
+    console.error('[pending-cs] preview failed:', err.message)
+    res.status(502).json({ ...meta, error: err.message, report: pendingCs.sampleReport(), sample: true })
+  }
+})
+
+// Manual "send to Slack now" — admin only.
+app.post('/api/pending-cs/send', requireAdmin, async (_req, res) => {
+  const cfg = pendingCs.getConfig()
+  if (!pendingCs.isGithubConfigured(cfg)) return res.status(400).json({ error: 'GitHub is not configured (GITHUB_TOKEN / GITHUB_REPO).' })
+  if (!pendingCs.isSlackConfigured(cfg)) return res.status(400).json({ error: 'Slack is not configured (SLACK_BOT_TOKEN or SLACK_WEBHOOK_URL).' })
+  try {
+    const { report, result } = await pendingCs.runDailyReport(cfg)
+    console.log(`[pending-cs] manual send by ${_req.session.user.username} → ${report.totalTickets} tickets`)
+    res.json({ success: true, via: result.via, totalTickets: report.totalTickets, totalAssignees: report.totalAssignees })
+  } catch (err) {
+    console.error('[pending-cs] manual send failed:', err.message)
+    res.status(502).json({ error: err.message })
+  }
+})
+
 // ─── Static ───────────────────────────────────────────────────────────────────
 app.use(express.static(path.join(__dirname, 'public')))
+
+// ─── Pending CS daily scheduler ──────────────────────────────────────────────
+;(function schedulePendingCs() {
+  const cfg = pendingCs.getConfig()
+  if (!pendingCs.isEnabled(cfg)) {
+    console.log('[pending-cs] scheduler idle (set GITHUB_TOKEN/GITHUB_REPO + Slack creds, or PENDING_CS_ENABLED=true).')
+    return
+  }
+  if (!cron.validate(cfg.schedule)) {
+    console.error(`[pending-cs] invalid PENDING_CS_SCHEDULE "${cfg.schedule}" — scheduler not started.`)
+    return
+  }
+  cron.schedule(cfg.schedule, async () => {
+    try {
+      const { report } = await pendingCs.runDailyReport(cfg)
+      console.log(`[pending-cs] daily report posted → ${report.totalTickets} tickets across ${report.totalAssignees} ninjas.`)
+    } catch (err) {
+      console.error('[pending-cs] daily report failed:', err.message)
+    }
+  }, { timezone: cfg.tz })
+  console.log(`[pending-cs] scheduled "${cfg.schedule}" (${cfg.tz}) → channel ${cfg.channel}.`)
+})()
 
 app.listen(PORT, () => {
   console.log(`Boom Ops portal running → http://localhost:${PORT}`)
