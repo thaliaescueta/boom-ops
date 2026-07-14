@@ -42,7 +42,7 @@ first, and each row gets a visual urgency tier:
 | `SLACK_BOT_TOKEN` | yes* | — | `xoxb-…` — preferred; needed for real @mentions. Scopes: `chat:write`. |
 | `SLACK_WEBHOOK_URL` | yes* | — | Incoming-webhook fallback if no bot token. |
 | `SLACK_CS_CHANNEL` | no | `C09JYCQ2DLG` (#boom-ninjas) | Channel id or name. |
-| `PENDING_CS_TZ` | no | `Asia/Manila` | Timezone for the schedule. |
+| `PENDING_CS_TZ` | no | `Asia/Jerusalem` | Timezone for the schedule (9 AM Israel time). |
 | `PENDING_CS_SCHEDULE` | no | `0 9 * * *` | Cron expression (9:00 AM). |
 | `PENDING_CS_ENABLED` | no | auto | `true`/`false` to force the scheduler on/off. Auto-on when GitHub + Slack are both set. |
 | `PENDING_CS_CRIT_DAYS` / `_HIGH_DAYS` / `_MED_DAYS` | no | 7 / 4 / 2 | Age thresholds. |
