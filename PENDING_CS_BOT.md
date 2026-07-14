@@ -8,8 +8,13 @@ the team can keep their queue under control.
 > Because "Pending CS" is a Projects v2 single-select **Status** field (not a
 > label), the tickets are fetched through GitHub's **GraphQL** Projects v2 API.
 
-The report is a **per-agent table** — one row per assignee, counting only
-tickets that have been **open longer than 24 hours**:
+The report is posted as a **Slack Canvas table** in **#boom-ninjas** — a real
+grid with clickable ticket links, updated **in place** every morning (one canvas,
+no channel spam). Set `PENDING_CS_OUTPUT=message` to fall back to a chat message
+instead.
+
+It's a **per-agent table** — one row per assignee, counting only tickets that
+have been **open longer than 24 hours**:
 
 - **Agent** — the assignee, @mentioned
 - **# open >24h** — how many of their Pending CS tickets have been aging past 24h
@@ -77,9 +82,10 @@ the **Send to #boom-ninjas** button live, but depends on the server staying up.
 | `GITHUB_STATUS_FIELD` | no | `Status` | Single-select field name on the board. |
 | `PENDING_CS_STATUS` | no | `Pending CS` | The status option to report on. |
 | `PENDING_CS_AGE_FROM` | no | `assignment` | `assignment` (uses the assign event) or `created`. |
-| `SLACK_BOT_TOKEN` | yes* | — | `xoxb-…` — preferred; needed for real @mentions. Scopes: `chat:write`. |
-| `SLACK_WEBHOOK_URL` | yes* | — | Incoming-webhook fallback if no bot token. |
-| `SLACK_CS_CHANNEL` | no | `C09JYCQ2DLG` (#boom-ninjas) | Channel id or name. |
+| `SLACK_BOT_TOKEN` | yes | — | `xoxb-…`. Scopes: `canvases:write`, `channels:read` (+ `chat:write` for message mode). The bot must be **invited to #boom-ninjas**. |
+| `SLACK_WEBHOOK_URL` | — | — | Only used by `PENDING_CS_OUTPUT=message` fallback. |
+| `SLACK_CS_CHANNEL` | no | `C09JYCQ2DLG` (#boom-ninjas) | Channel whose canvas is updated. |
+| `PENDING_CS_OUTPUT` | no | `canvas` when a bot token is set | `canvas` (channel canvas) or `message`. |
 | `PENDING_CS_TZ` | no | `Asia/Jerusalem` | Timezone for the schedule (9 AM Israel time). |
 | `PENDING_CS_SCHEDULE` | no | `0 9 * * *` | Cron expression (9:00 AM). |
 | `PENDING_CS_ENABLED` | no | auto | `true`/`false` to force the scheduler on/off. Auto-on when GitHub + Slack are both set. |
