@@ -8,24 +8,26 @@ the team can keep their queue under control.
 > Because "Pending CS" is a Projects v2 single-select **Status** field (not a
 > label), the tickets are fetched through GitHub's **GraphQL** Projects v2 API.
 
-The report is a **per-ticket table**, one row per open Pending CS ticket:
+The report is a **per-agent table** — one row per assignee, counting only
+tickets that have been **open longer than 24 hours**:
 
-- **GitHub ticket** — clickable `#number + title`
-- **Assignee(s)** — @mentioned (unassigned tickets are grouped separately)
-- **Age** — days since the ticket was created
+- **Agent** — the assignee, @mentioned
+- **# open >24h** — how many of their Pending CS tickets have been aging past 24h
+- **Tickets** — clickable links to those tickets (each shows its age)
 
-Rows are sorted oldest-first (most urgent at the top, 👑), and each row gets a
-visual urgency tier by age:
+Rows are sorted by count (most aging tickets first, 👑). Colour tracks the count
+so it's obvious who needs to act:
 
-| Tier | Marker | Default trigger |
-|------|--------|-----------------|
-| Critical | 🔴 | age ≥ 7 days |
-| High | 🟠 | age ≥ 4 days |
-| Medium | 🟡 | age ≥ 2 days |
-| Healthy | 🟢 | newer than 2 days |
+| Tier | Marker | Trigger |
+|------|--------|---------|
+| Critical | 🔴 | 4+ tickets open >24h |
+| High | 🟠 | 2–3 tickets open >24h |
+| Medium | 🟡 | 1 ticket open >24h |
 
-Set `PENDING_CS_AGE_FROM=assignment` to measure age from when the ticket was
-assigned (via the GitHub timeline) instead of when it was created.
+Tickets with no assignee are grouped into an **Unassigned** row. The 24h window
+is configurable via `PENDING_CS_MIN_AGE_HOURS`. Age is measured from ticket
+creation by default; set `PENDING_CS_AGE_FROM=assignment` to use the assignment
+date instead.
 
 ## Pieces
 

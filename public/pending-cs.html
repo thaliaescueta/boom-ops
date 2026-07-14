@@ -97,8 +97,11 @@
   .report-root .tier.medium { background:#fefce8; color:#a16207; border:1px solid #fde68a; }
   .report-root .tier.healthy { background:#f0fdf4; color:#16a34a; border:1px solid #bbf7d0; }
   .report-root .tkt { font-size:13px; line-height:1.5; }
-  .report-root .tkt-link { color:var(--primary); font-weight:700; text-decoration:none; }
-  .report-root .tkt-link:hover { text-decoration:underline; }
+  .report-root .tkt-links { display:flex; flex-wrap:wrap; gap:5px; }
+  .report-root .tkt-link { display:inline-flex; align-items:center; gap:4px; padding:1px 7px; border-radius:6px; background:var(--g50); border:1px solid var(--g200); color:var(--primary); font-weight:700; font-size:11px; text-decoration:none; white-space:nowrap; }
+  .report-root .tkt-link:hover { background:#eef2ff; border-color:var(--primary); }
+  .report-root .tkt-age { font-weight:700; font-size:10px; }
+  .report-root .tkt-age.age-crit { color:#dc2626; } .report-root .tkt-age.age-high { color:#c2410c; } .report-root .tkt-age.age-med { color:#a16207; } .report-root .tkt-age.age-ok { color:var(--g400); }
   .report-root .who-chip { display:inline-block; padding:2px 8px; border-radius:20px; font-size:11px; font-weight:700; background:#eef2ff; color:#4338ca; border:1px solid #e0e7ff; white-space:nowrap; }
   .report-root .who-chip.unmapped { background:var(--g100); color:var(--g500); border-color:var(--g200); }
   .report-root .unassigned-tag { font-size:11px; font-weight:700; color:#a16207; }
@@ -145,7 +148,7 @@
   <div class="report-root">
     <div class="topbar">
       <div class="topbar-inner">
-        <div class="brand">BOOM <em>·</em> Pending CS — Daily Report</div>
+        <div class="brand">BOOM <em>·</em> Pending CS — Aging Tickets (&gt;24h)</div>
         <div class="tb-r">
           <span class="tb-date" id="hdr-date"></span>
           <button class="btn" onclick="load(false)">🧪 Sample</button>
@@ -246,34 +249,42 @@ function render(data) {
   // KPIs
   const c = rep.counts
   document.getElementById('kpi-strip').innerHTML =
-    kpi(rep.totalTickets, 'Open Tickets', '') +
+    kpi(rep.agingTickets, 'Tickets >24h', '') +
+    kpi(rep.totalAgents, 'Agents', '') +
     kpi(c.critical, 'Critical', 'red') +
-    kpi(c.high, 'High', 'amber') +
-    kpi(rep.unassignedCount, 'Unassigned', rep.unassignedCount ? 'yellow' : '')
+    kpi(rep.unassigned.count, 'Unassigned', rep.unassigned.count ? 'yellow' : '')
 
-  // Per-ticket table
+  // Per-agent table: agent | # open >24h | ticket links
+  const ticketLinks = (tickets) => tickets.map(tk => tk.url
+    ? '<a href="' + esc(tk.url) + '" target="_blank" class="tkt-link" title="' + esc(tk.title) + '">#' + tk.number + '<span class="tkt-age ' + ageCls(tk.ageDays) + '">' + tk.ageDays + 'd</span></a>'
+    : '<span class="tkt-link">#' + tk.number + '</span>').join(' ')
+
   const card = document.getElementById('table-card')
-  if (!rep.totalTickets) {
-    card.innerHTML = '<div class="empty">🎉 Queue is clear — no open Pending CS tickets.</div>'
+  if (!rep.agingTickets) {
+    card.innerHTML = '<div class="empty">🎉 Nothing aging — no Pending CS tickets open longer than 24h.</div>'
   } else {
     let html = '<table><thead><tr>'
-      + '<th>#</th><th>Ticket</th><th>Assignee</th><th>Status</th><th class="num">Age</th>'
+      + '<th>#</th><th>Agent</th><th>Status</th><th class="num">Open &gt;24h</th><th class="num">Oldest</th><th>Tickets</th>'
       + '</tr></thead><tbody>'
-    for (const tk of rep.tickets) {
-      const titleCell = (tk.url
-        ? '<a href="' + esc(tk.url) + '" target="_blank" class="tkt-link">#' + tk.number + ' ' + esc(tk.title) + '</a>'
-        : '#' + tk.number + ' ' + esc(tk.title))
-      const who = tk.unassigned
-        ? '<span class="unassigned-tag">❔ unassigned</span>'
-        : tk.assignees.map(a => '<span class="who-chip' + (a.slackId ? '' : ' unmapped') + '">' + esc(a.name) + '</span>').join(' ')
-      html += '<tr class="' + (tk.top ? 'top' : '') + (tk.unassigned ? ' unassigned-row' : '') + '">'
-        + '<td class="num" style="color:var(--g400);font-weight:700">' + tk.rank + '</td>'
-        + '<td><div class="tkt">' + DOTS[tk.tier] + ' ' + titleCell + (tk.top ? '<span class="crown">👑</span>' : '')
-          + (tk.repo ? '<br><span class="login">' + esc(tk.repo) + '</span>' : '') + '</div></td>'
-        + '<td>' + who + '</td>'
-        + '<td><span class="tier ' + tk.tier + '">' + DOTS[tk.tier] + ' ' + esc(tk.tierLabel) + '</span></td>'
-        + '<td class="num"><span class="big ' + ageCls(tk.ageDays) + '">' + tk.ageDays + 'd</span></td>'
+    for (const a of rep.agents) {
+      html += '<tr class="' + (a.top ? 'top' : '') + '">'
+        + '<td class="num" style="color:var(--g400);font-weight:700">' + a.rank + '</td>'
+        + '<td><div class="who"><span class="dot">' + DOTS[a.tier] + '</span><div>'
+          + '<span class="nm">' + esc(a.name) + '</span>' + (a.top ? '<span class="crown">👑</span>' : '')
+          + '<br><span class="login">@' + esc(a.login) + (a.slackId ? '' : ' · unmapped') + '</span></div></div></td>'
+        + '<td><span class="tier ' + a.tier + '">' + DOTS[a.tier] + ' ' + esc(a.tierLabel) + '</span></td>'
+        + '<td class="num"><span class="big">' + a.count + '</span></td>'
+        + '<td class="num"><span class="big ' + ageCls(a.oldestDays) + '">' + a.oldestDays + 'd</span></td>'
+        + '<td><div class="tkt-links">' + ticketLinks(a.tickets) + '</div></td>'
         + '</tr>'
+    }
+    if (rep.unassigned.count) {
+      html += '<tr class="unassigned-row"><td class="num">—</td>'
+        + '<td><div class="who"><span class="dot">❔</span><span class="nm" style="color:var(--g500)">Unassigned</span></div></td>'
+        + '<td><span class="tier medium">needs owner</span></td>'
+        + '<td class="num"><span class="big">' + rep.unassigned.count + '</span></td>'
+        + '<td class="num"><span class="big ' + ageCls(rep.unassigned.oldestDays) + '">' + rep.unassigned.oldestDays + 'd</span></td>'
+        + '<td><div class="tkt-links">' + ticketLinks(rep.unassigned.tickets) + '</div></td></tr>'
     }
     html += '</tbody></table>'
     card.innerHTML = html
@@ -298,7 +309,7 @@ function sendNow() {
   fetch('/api/pending-cs/send', { method: 'POST' }).then(r => r.json()).then(d => {
     if (d.success) {
       s.className = 'send-status ok'
-      s.textContent = '✓ Posted to Slack via ' + d.via + ' — ' + d.totalTickets + ' tickets (' + d.unassignedCount + ' unassigned).'
+      s.textContent = '✓ Posted to Slack via ' + d.via + ' — ' + d.agingTickets + ' tickets >24h across ' + d.totalAgents + ' agents (' + d.unassignedCount + ' unassigned).'
     } else {
       s.className = 'send-status err'; s.textContent = '✗ ' + (d.error || 'Failed to send.')
     }

@@ -43,8 +43,8 @@ async function main() {
   }
 
   const report = await cs.generateReport(cfg)
-  console.log(`[pending-cs] ${report.totalTickets} open Pending CS tickets` +
-    (report.unassignedCount ? `, ${report.unassignedCount} unassigned.` : '.'))
+  console.log(`[pending-cs] ${report.agingTickets} Pending CS tickets open >24h across ${report.totalAgents} agents` +
+    (report.unassigned.count ? `, ${report.unassigned.count} unassigned.` : '.'))
 
   if (dryRun) {
     console.log('\n--- DRY RUN (not posting) ---\n' + cs.formatSlackMessage(report, cfg).text)

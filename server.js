@@ -177,8 +177,8 @@ app.post('/api/pending-cs/send', requireAdmin, async (_req, res) => {
   if (!pendingCs.isSlackConfigured(cfg)) return res.status(400).json({ error: 'Slack is not configured (SLACK_BOT_TOKEN or SLACK_WEBHOOK_URL).' })
   try {
     const { report, result } = await pendingCs.runDailyReport(cfg)
-    console.log(`[pending-cs] manual send by ${_req.session.user.username} → ${report.totalTickets} tickets`)
-    res.json({ success: true, via: result.via, totalTickets: report.totalTickets, unassignedCount: report.unassignedCount })
+    console.log(`[pending-cs] manual send by ${_req.session.user.username} → ${report.agingTickets} aging tickets`)
+    res.json({ success: true, via: result.via, agingTickets: report.agingTickets, totalAgents: report.totalAgents, unassignedCount: report.unassigned.count })
   } catch (err) {
     console.error('[pending-cs] manual send failed:', err.message)
     res.status(502).json({ error: err.message })
@@ -202,7 +202,7 @@ app.use(express.static(path.join(__dirname, 'public')))
   cron.schedule(cfg.schedule, async () => {
     try {
       const { report } = await pendingCs.runDailyReport(cfg)
-      console.log(`[pending-cs] daily report posted → ${report.totalTickets} tickets (${report.unassignedCount} unassigned).`)
+      console.log(`[pending-cs] daily report posted → ${report.agingTickets} aging tickets across ${report.totalAgents} agents (${report.unassigned.count} unassigned).`)
     } catch (err) {
       console.error('[pending-cs] daily report failed:', err.message)
     }
