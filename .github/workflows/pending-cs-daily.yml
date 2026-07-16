@@ -34,6 +34,8 @@ jobs:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
           SLACK_CS_CHANNEL: ${{ vars.SLACK_CS_CHANNEL || 'C09JYCQ2DLG' }}
           PENDING_CS_OUTPUT: canvas
+          # The #boom-ninjas channel canvas, edited in place each morning.
+          PENDING_CS_CANVAS_ID: ${{ vars.PENDING_CS_CANVAS_ID || 'F0BHMFKN51B' }}
           PENDING_CS_TZ: Asia/Jerusalem
           PENDING_CS_ENFORCE_HOUR: '9'
           # Manual runs post immediately; scheduled runs respect the hour guard.

@@ -86,6 +86,7 @@ the **Send to #boom-ninjas** button live, but depends on the server staying up.
 | `SLACK_WEBHOOK_URL` | — | — | Only used by `PENDING_CS_OUTPUT=message` fallback. |
 | `SLACK_CS_CHANNEL` | no | `C09JYCQ2DLG` (#boom-ninjas) | Channel whose canvas is updated. |
 | `PENDING_CS_OUTPUT` | no | `canvas` when a bot token is set | `canvas` (channel canvas) or `message`. |
+| `PENDING_CS_CANVAS_ID` | no | `F0BHMFKN51B` | The #boom-ninjas canvas edited daily. With it set, the job needs only `canvases:write` (no `channels:read`). |
 | `PENDING_CS_TZ` | no | `Asia/Jerusalem` | Timezone for the schedule (9 AM Israel time). |
 | `PENDING_CS_SCHEDULE` | no | `0 9 * * *` | Cron expression (9:00 AM). |
 | `PENDING_CS_ENABLED` | no | auto | `true`/`false` to force the scheduler on/off. Auto-on when GitHub + Slack are both set. |
