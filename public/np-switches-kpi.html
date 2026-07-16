@@ -160,12 +160,12 @@ var KPIS = [
   {n:'—',    u:'median days', l:'Issue full-cycle closure time',
    d:'Median days from an issue being reported to fixed AND confirmed with the client. Shows if we actually close what we open.',
    t:'Target ≤ 3d · baseline pending', cls:''},
-  {n:'1',    u:'of 7 NP', l:'Escalations to NextPax',
-   d:'How many issues we had to escalate to NextPax to resolve. Fewer means the team handles more in-house.',
+  {n:'14%',  u:'1 of 7 NP', l:'NextPax escalation rate',
+   d:'Share of NextPax switches where an issue had to be escalated to NextPax to resolve — here 1 of 7. Fewer means the team resolves more in-house.',
    t:'Target ↓ each period', cls:'g'},
-  {n:'100%', u:'', l:'Post-switch retention',
-   d:'Share of switched clients still active 90 days later. Catches churn or switch-backs caused by a rough migration.',
-   t:'Target ≥ 95%', cls:'g'}
+  {n:'0',    u:'of 18 · 0%', l:'Churn / switch-backs',
+   d:'Clients who churned or switched back within 90 days of migrating. 0 of 18 switches so far (= 100% retention). Catches clients lost to a rough migration.',
+   t:'Target 0 · ≤ 5%', cls:'g'}
 ];
 document.getElementById('kpis').innerHTML = KPIS.map(function(k){
   return '<div class="kpi '+k.cls+'"><div class="top"></div>'+
