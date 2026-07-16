@@ -29,7 +29,8 @@
   .kpi .n.g{color:var(--green)} .kpi .n.a{color:var(--amber)} .kpi .n.r{color:var(--red)}
   .kpi .u{font-size:12px;font-weight:600;color:var(--faint)}
   .kpi .l{font-size:11.5px;font-weight:700;color:var(--ink);margin-top:9px;line-height:1.3}
-  .kpi .t{font-size:11px;color:var(--dim);margin-top:5px}
+  .kpi .d{font-size:11px;color:var(--dim);margin-top:6px;line-height:1.4}
+  .kpi .t{font-size:11px;color:var(--ink);font-weight:600;margin-top:8px;padding-top:7px;border-top:1px solid var(--line2)}
   .kpi .arrow{position:absolute;top:14px;right:14px;font-size:12px;font-weight:700}
   .arrow.up{color:var(--green)} .arrow.down{color:var(--green)} .arrow.bad{color:var(--red)}
   .grid2{display:grid;grid-template-columns:1fr 1fr;gap:20px}
@@ -47,6 +48,15 @@
   .mono{font-variant-numeric:tabular-nums}
   .age{font-weight:700}
   .note{font-size:11.5px;color:var(--dim);margin-top:10px}
+  .intro{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px 20px;box-shadow:var(--sh);margin-bottom:8px}
+  .intro p{margin:0;font-size:13.5px;color:var(--ink);line-height:1.55}
+  .intro p + p{margin-top:10px}
+  .intro .lbl{font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.06em;color:var(--blue)}
+  .warn{display:flex;gap:10px;align-items:flex-start;background:#fffbeb;border:1px solid #fde68a;border-radius:10px;padding:11px 13px;margin-top:14px;font-size:12.5px;color:#854d0e;line-height:1.5}
+  .warn b{color:#713f12}
+  .lead{font-size:12.5px;color:var(--dim);margin:-6px 0 14px;line-height:1.5;max-width:80ch}
+  .legend{display:flex;flex-wrap:wrap;gap:14px;font-size:11.5px;color:var(--dim);margin-top:12px}
+  .legend span{display:inline-flex;align-items:center;gap:6px}
   .split{display:flex;gap:6px;align-items:center;margin:6px 0}
   .split .seg{height:22px;border-radius:5px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:11px;font-weight:700}
   footer{margin-top:36px;font-size:11.5px;color:var(--faint);text-align:center}
@@ -69,31 +79,61 @@
 
 <div class="wrap">
 
+  <div class="intro">
+    <p><span class="lbl">What this is.</span> A bi-weekly health check on the <b>Switches</b> project —
+    moving clients onto Boom from their old system, either <b>via NextPax</b> or via Rentals United (RU)
+    as the channel-manager path. It answers one question for leadership: <b>is our migration process
+    getting better?</b> Each number below tracks one part of that.</p>
+    <div class="warn">
+      <span>⚠️</span>
+      <span><b>These are baseline numbers, not yet a live measurement.</b> They're pulled from the current
+      migration dashboard so you can see the format and a realistic starting point. They become exact once
+      every migration issue is logged with the standard labels (client · severity · channel-manager). Read
+      them as "roughly where we stand today," not audited figures.</span>
+    </div>
+  </div>
+
   <h2>Headline KPIs</h2>
+  <p class="lead">The five numbers we report every two weeks. The colour bar on top shows status against
+  target — <b style="color:var(--green)">green</b> = on/above target, <b style="color:var(--amber)">amber</b>
+  = needs watching, <b style="color:var(--red)">red</b> = off target.</p>
   <div class="kpis" id="kpis"></div>
 
   <h2>Channel-manager path &amp; issue mix</h2>
+  <p class="lead">Context for the headline numbers: how many switches went through each path, and what
+  kinds of problems are behind the open issues so we can fix root causes rather than symptoms.</p>
   <div class="grid2">
     <div class="panel">
       <h3>Switches by path</h3>
       <div id="splitbar"></div>
       <table id="pathtbl"></table>
-      <div class="note">18 switches completed to date. NextPax is the focus of this project; RU shown for comparison.</div>
+      <div class="note">How each completed switch reached Boom. <b>NextPax</b> is the focus of this project;
+      <b>RU</b> (Rentals United) is shown for comparison, <b>Direct</b> = no channel manager. 18 switches to date.</div>
     </div>
     <div class="panel">
       <h3>Open issues by category</h3>
       <table id="cattbl"></table>
-      <div class="note">Where switches break — drives root-causing. Categories from the standardized issue labels.</div>
+      <div class="note">What the currently-open issues are about. A tall bar means that area breaks often
+      during switches and is worth root-causing (e.g. how data or pricing is mapped over).</div>
     </div>
   </div>
 
   <h2>Critical &amp; High issues still open</h2>
+  <p class="lead">Every serious problem currently unresolved on a switched client — the detail behind the
+  "issues per switch" and "clean-switch rate" numbers above. Each stays here until it's fixed <b>and</b>
+  confirmed with the client.</p>
   <div class="panel">
     <table id="opentbl"></table>
-    <div class="note">These count against Clean-Switch Rate until verified closed with the client. Age = days since reported.</div>
+    <div class="legend">
+      <span><span class="pill p-crit">Critical</span> data loss, compliance risk, or bookings/revenue broken</span>
+      <span><span class="pill p-high">High</span> a core channel or feature is down, but a workaround exists</span>
+      <span><b style="color:var(--red)">Red age</b> open &gt; 7 days (past our closure target)</span>
+    </div>
   </div>
 
   <h2>Escalations to NextPax</h2>
+  <p class="lead">Issues our team couldn't resolve in-house and had to hand to NextPax. Fewer over time
+  means the process — and our team's ability to self-serve — is improving.</p>
   <div class="panel">
     <table id="esctbl"></table>
   </div>
@@ -111,17 +151,26 @@ document.getElementById('gen').textContent = 'generated ' +
 
 /* ---- KPI headline data (current baseline snapshot) ---- */
 var KPIS = [
-  {n:'0.78', u:'per switch', l:'Critical + High issues per switch', t:'Target ≤ 1.0', cls:'a', arrow:'', dir:''},
-  {n:'72%',  u:'', l:'Clean-Switch Rate (no Crit/High @ +14d)', t:'Target ≥ 90%', cls:'a', arrow:'', dir:''},
-  {n:'—',    u:'median days', l:'Issue full-cycle closure time', t:'Target ≤ 3d · baseline pending', cls:'', arrow:'', dir:''},
-  {n:'1',    u:'of 7 NP', l:'Escalations to NextPax', t:'Target ↓ each period', cls:'g', arrow:'', dir:''},
-  {n:'100%', u:'', l:'Post-switch retention (90d)', t:'Target ≥ 95%', cls:'g', arrow:'', dir:''}
+  {n:'0.78', u:'per switch', l:'Critical + High issues per switch',
+   d:'Average number of serious problems reported per completed switch. Lower = cleaner migrations.',
+   t:'Target ≤ 1.0', cls:'a'},
+  {n:'72%',  u:'', l:'Clean-Switch Rate',
+   d:'Share of switches with zero serious issues still open 14 days after go-live. Our headline "did it go well?" number.',
+   t:'Target ≥ 90%', cls:'a'},
+  {n:'—',    u:'median days', l:'Issue full-cycle closure time',
+   d:'Median days from an issue being reported to fixed AND confirmed with the client. Shows if we actually close what we open.',
+   t:'Target ≤ 3d · baseline pending', cls:''},
+  {n:'1',    u:'of 7 NP', l:'Escalations to NextPax',
+   d:'How many issues we had to escalate to NextPax to resolve. Fewer means the team handles more in-house.',
+   t:'Target ↓ each period', cls:'g'},
+  {n:'100%', u:'', l:'Post-switch retention',
+   d:'Share of switched clients still active 90 days later. Catches churn or switch-backs caused by a rough migration.',
+   t:'Target ≥ 95%', cls:'g'}
 ];
 document.getElementById('kpis').innerHTML = KPIS.map(function(k){
   return '<div class="kpi '+k.cls+'"><div class="top"></div>'+
-    (k.arrow?'<span class="arrow '+k.dir+'">'+k.arrow+'</span>':'')+
     '<div class="n '+k.cls+'">'+k.n+' <span class="u">'+k.u+'</span></div>'+
-    '<div class="l">'+k.l+'</div><div class="t">'+k.t+'</div></div>';
+    '<div class="l">'+k.l+'</div><div class="d">'+k.d+'</div><div class="t">'+k.t+'</div></div>';
 }).join('');
 
 /* ---- Switches by path ---- */
