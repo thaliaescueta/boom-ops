@@ -1,0 +1,181 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>NextPax / Switches — KPI Report</title>
+<style>
+  :root{
+    --bg:#f4f6f9; --card:#fff; --ink:#0f172a; --dim:#64748b; --faint:#94a3b8;
+    --line:#e2e8f0; --line2:#eef2f6; --sh:0 1px 3px rgba(15,23,42,.06),0 1px 2px rgba(15,23,42,.04);
+    --red:#dc2626; --amber:#d97706; --green:#16a34a; --blue:#2563eb; --np:#7c3aed; --ru:#0891b2;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    -webkit-font-smoothing:antialiased;line-height:1.5;padding:0 0 60px}
+  .wrap{max-width:1080px;margin:0 auto;padding:0 24px}
+  header{background:linear-gradient(135deg,#0f172a,#1e293b);color:#fff;padding:34px 0 30px;margin-bottom:26px}
+  header .wrap{display:flex;justify-content:space-between;align-items:flex-end;gap:20px;flex-wrap:wrap}
+  header h1{margin:0;font-size:26px;font-weight:800;letter-spacing:-.02em}
+  header .sub{color:#cbd5e1;font-size:13px;margin-top:6px}
+  header .period{text-align:right;font-size:12px;color:#cbd5e1}
+  header .period b{display:block;color:#fff;font-size:15px;font-weight:700}
+  h2{font-size:13px;font-weight:800;text-transform:uppercase;letter-spacing:.07em;color:var(--dim);
+    margin:34px 0 14px;display:flex;align-items:center;gap:8px}
+  h2::before{content:"";width:4px;height:14px;border-radius:2px;background:var(--blue)}
+  .kpis{display:grid;grid-template-columns:repeat(5,1fr);gap:14px}
+  .kpi{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px 16px 14px;box-shadow:var(--sh);position:relative;overflow:hidden}
+  .kpi .top{border-top:3px solid var(--line);position:absolute;top:0;left:0;right:0}
+  .kpi.g .top{border-color:var(--green)} .kpi.a .top{border-color:var(--amber)} .kpi.r .top{border-color:var(--red)}
+  .kpi .n{font-size:30px;font-weight:800;line-height:1;letter-spacing:-.02em;margin-top:4px}
+  .kpi .n.g{color:var(--green)} .kpi .n.a{color:var(--amber)} .kpi .n.r{color:var(--red)}
+  .kpi .u{font-size:12px;font-weight:600;color:var(--faint)}
+  .kpi .l{font-size:11.5px;font-weight:700;color:var(--ink);margin-top:9px;line-height:1.3}
+  .kpi .t{font-size:11px;color:var(--dim);margin-top:5px}
+  .kpi .arrow{position:absolute;top:14px;right:14px;font-size:12px;font-weight:700}
+  .arrow.up{color:var(--green)} .arrow.down{color:var(--green)} .arrow.bad{color:var(--red)}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+  .panel{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px 20px;box-shadow:var(--sh)}
+  .panel h3{margin:0 0 14px;font-size:14px;font-weight:800}
+  table{width:100%;border-collapse:collapse;font-size:13px}
+  th{text-align:left;font-size:10.5px;text-transform:uppercase;letter-spacing:.05em;color:var(--faint);font-weight:700;padding:0 10px 8px;border-bottom:1px solid var(--line)}
+  td{padding:9px 10px;border-bottom:1px solid var(--line2);vertical-align:top}
+  tr:last-child td{border-bottom:none}
+  .bar{height:9px;border-radius:5px;background:var(--line);overflow:hidden;min-width:60px}
+  .bar > span{display:block;height:100%;border-radius:5px}
+  .pill{display:inline-block;font-size:10.5px;font-weight:700;padding:2px 8px;border-radius:20px;white-space:nowrap}
+  .p-crit{background:#fee2e2;color:#b91c1c} .p-high{background:#ffedd5;color:#c2410c}
+  .p-norm{background:#fef9c3;color:#a16207} .p-np{background:#f3e8ff;color:#7c3aed} .p-ru{background:#cffafe;color:#0e7490}
+  .mono{font-variant-numeric:tabular-nums}
+  .age{font-weight:700}
+  .note{font-size:11.5px;color:var(--dim);margin-top:10px}
+  .split{display:flex;gap:6px;align-items:center;margin:6px 0}
+  .split .seg{height:22px;border-radius:5px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:11px;font-weight:700}
+  footer{margin-top:36px;font-size:11.5px;color:var(--faint);text-align:center}
+  @media(max-width:860px){.kpis{grid-template-columns:repeat(2,1fr)}.grid2{grid-template-columns:1fr}}
+</style>
+
+<header>
+  <div class="wrap">
+    <div>
+      <h1>NextPax / Switches — KPI Report</h1>
+      <div class="sub">Migration process health · reported bi-weekly to leadership</div>
+    </div>
+    <div class="period">
+      Reporting period
+      <b id="period">Feb 2026 — baseline</b>
+      <span id="gen"></span>
+    </div>
+  </div>
+</header>
+
+<div class="wrap">
+
+  <h2>Headline KPIs</h2>
+  <div class="kpis" id="kpis"></div>
+
+  <h2>Channel-manager path &amp; issue mix</h2>
+  <div class="grid2">
+    <div class="panel">
+      <h3>Switches by path</h3>
+      <div id="splitbar"></div>
+      <table id="pathtbl"></table>
+      <div class="note">18 switches completed to date. NextPax is the focus of this project; RU shown for comparison.</div>
+    </div>
+    <div class="panel">
+      <h3>Open issues by category</h3>
+      <table id="cattbl"></table>
+      <div class="note">Where switches break — drives root-causing. Categories from the standardized issue labels.</div>
+    </div>
+  </div>
+
+  <h2>Critical &amp; High issues still open</h2>
+  <div class="panel">
+    <table id="opentbl"></table>
+    <div class="note">These count against Clean-Switch Rate until verified closed with the client. Age = days since reported.</div>
+  </div>
+
+  <h2>Escalations to NextPax</h2>
+  <div class="panel">
+    <table id="esctbl"></table>
+  </div>
+
+  <footer>
+    Boom CSM Portal · NextPax/Switches KPI framework. Numbers are the current dashboard snapshot;
+    they become exact once every migration issue is logged with the standard <code>client:</code> /
+    <code>sev:</code> / <code>cm:</code> labels.
+  </footer>
+</div>
+
+<script>
+document.getElementById('gen').textContent = 'generated ' +
+  new Date().toLocaleDateString('en-US',{year:'numeric',month:'short',day:'numeric'});
+
+/* ---- KPI headline data (current baseline snapshot) ---- */
+var KPIS = [
+  {n:'0.78', u:'per switch', l:'Critical + High issues per switch', t:'Target ≤ 1.0', cls:'a', arrow:'', dir:''},
+  {n:'72%',  u:'', l:'Clean-Switch Rate (no Crit/High @ +14d)', t:'Target ≥ 90%', cls:'a', arrow:'', dir:''},
+  {n:'—',    u:'median days', l:'Issue full-cycle closure time', t:'Target ≤ 3d · baseline pending', cls:'', arrow:'', dir:''},
+  {n:'1',    u:'of 7 NP', l:'Escalations to NextPax', t:'Target ↓ each period', cls:'g', arrow:'', dir:''},
+  {n:'100%', u:'', l:'Post-switch retention (90d)', t:'Target ≥ 95%', cls:'g', arrow:'', dir:''}
+];
+document.getElementById('kpis').innerHTML = KPIS.map(function(k){
+  return '<div class="kpi '+k.cls+'"><div class="top"></div>'+
+    (k.arrow?'<span class="arrow '+k.dir+'">'+k.arrow+'</span>':'')+
+    '<div class="n '+k.cls+'">'+k.n+' <span class="u">'+k.u+'</span></div>'+
+    '<div class="l">'+k.l+'</div><div class="t">'+k.t+'</div></div>';
+}).join('');
+
+/* ---- Switches by path ---- */
+var PATH = [{k:'NextPax',v:7,c:'var(--np)'},{k:'Rentals United',v:10,c:'var(--ru)'},{k:'Direct',v:1,c:'#94a3b8'}];
+var tot = PATH.reduce(function(a,b){return a+b.v},0);
+document.getElementById('splitbar').innerHTML = '<div class="split">' + PATH.map(function(p){
+  return '<div class="seg" style="flex:'+p.v+';background:'+p.c+'">'+p.v+'</div>';
+}).join('') + '</div>';
+document.getElementById('pathtbl').innerHTML =
+  '<tr><th>Path</th><th>Switches</th><th>Share</th></tr>' + PATH.map(function(p){
+    return '<tr><td><b>'+p.k+'</b></td><td class="mono">'+p.v+'</td><td class="mono">'+Math.round(p.v/tot*100)+'%</td></tr>';
+  }).join('');
+
+/* ---- Issues by category ---- */
+var CAT = [
+  {k:'Data migration',v:4},{k:'Channel sync',v:4},{k:'Calendar',v:3},
+  {k:'Messaging / automation',v:3},{k:'UI / mobile',v:3},{k:'Pricing &amp; VAT',v:1},{k:'Access / permissions',v:1}
+];
+var cmax = Math.max.apply(null, CAT.map(function(c){return c.v}));
+document.getElementById('cattbl').innerHTML =
+  '<tr><th>Category</th><th>Open</th><th></th></tr>' + CAT.map(function(c){
+    return '<tr><td>'+c.k+'</td><td class="mono">'+c.v+'</td><td><div class="bar"><span style="width:'+
+      (c.v/cmax*100)+'%;background:var(--blue)"></span></div></td></tr>';
+  }).join('');
+
+/* ---- Open Critical/High issues (from dashboard) ---- */
+var OPEN = [
+  {c:'Verano',cm:'NP',sev:'crit',age:22,txt:'Bug #13575 — manual price overrides wiped during migration'},
+  {c:'Verano',cm:'NP',sev:'crit',age:2, txt:'URGENT: calendar blocking broken — CR38 cannot be blocked'},
+  {c:'Smith &amp; Adams',cm:'RU',sev:'crit',age:1,txt:'Revenue Analytics showing 0 occupancy / ADR / income'},
+  {c:'Fidalsa',cm:'RU',sev:'crit',age:1,txt:'COMPLIANCE: check-in errors + seasonal contracts (client fined before)'},
+  {c:'Fidalsa',cm:'RU',sev:'high',age:17,txt:'VRBO connection pending — no reply in 17+ days, client escalating'},
+  {c:'Smith &amp; Adams',cm:'RU',sev:'high',age:1,txt:'WhatsApp automation not triggering'},
+  {c:'Smith &amp; Adams',cm:'RU',sev:'high',age:1,txt:'Duplicate reservations not resolved'},
+  {c:'Furnished Club',cm:'RU',sev:'high',age:0,txt:'Inbound notifications + auto-messages not firing'},
+  {c:'Guroom',cm:'NP',sev:'high',age:0,txt:'Anna 403 error on Pricing Settings — support ticket open'}
+];
+var sevPill = {crit:'<span class="pill p-crit">Critical</span>',high:'<span class="pill p-high">High</span>'};
+var cmPill  = {NP:'<span class="pill p-np">NextPax</span>',RU:'<span class="pill p-ru">RU</span>'};
+document.getElementById('opentbl').innerHTML =
+  '<tr><th>Client</th><th>Path</th><th>Severity</th><th>Age</th><th>Issue</th></tr>' +
+  OPEN.sort(function(a,b){return (a.sev>b.sev?1:-1)||b.age-a.age}).map(function(o){
+    var aged = o.age>7 ? '<span class="age" style="color:var(--red)">'+o.age+'d</span>'
+                       : '<span class="age">'+o.age+'d</span>';
+    return '<tr><td><b>'+o.c+'</b></td><td>'+cmPill[o.cm]+'</td><td>'+sevPill[o.sev]+'</td><td class="mono">'+aged+'</td><td>'+o.txt+'</td></tr>';
+  }).join('');
+
+/* ---- Escalations to NextPax ---- */
+var ESC = [
+  {c:'Guroom',date:'Feb 23',status:'Open — support ticket / Intercom',txt:'Anna 403 on Pricing Settings (permissions enabled, still failing)'}
+];
+document.getElementById('esctbl').innerHTML =
+  '<tr><th>Client</th><th>Raised</th><th>Status</th><th>Issue</th></tr>' + ESC.map(function(e){
+    return '<tr><td><b>'+e.c+'</b></td><td class="mono">'+e.date+'</td><td>'+e.status+'</td><td>'+e.txt+'</td></tr>';
+  }).join('') +
+  (ESC.length?'':'<tr><td colspan="4" style="color:var(--dim)">No escalations this period.</td></tr>');
+</script>

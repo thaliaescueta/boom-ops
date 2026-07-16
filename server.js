@@ -93,6 +93,10 @@ app.get('/pending-cs', requireAuth, (_req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'pending-cs.html'))
 })
 
+app.get('/np-switches-kpi', requireAuth, (_req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'np-switches-kpi.html'))
+})
+
 // ─── API ──────────────────────────────────────────────────────────────────────
 app.get('/api/me', (req, res) => {
   if (!req.session.user) return res.status(401).json({ error: 'Not logged in' })
