@@ -1,0 +1,43 @@
+name: Pending CS Daily Report
+
+# Posts the Pending CS report to #boom-ninjas at 09:00 Israel time.
+# GitHub Actions cron is UTC-only, so we fire at both 06:00 and 07:00 UTC
+# (covering 9 AM in both IST/UTC+2 and IDT/UTC+3). The runner's hour guard
+# (PENDING_CS_ENFORCE_HOUR) then posts exactly once — when it's really 9 AM
+# in Asia/Jerusalem. A manual run (workflow_dispatch) always posts.
+
+on:
+  schedule:
+    - cron: '0 6,7 * * *'
+  workflow_dispatch: {}
+
+concurrency:
+  group: pending-cs-daily
+  cancel-in-progress: false
+
+jobs:
+  report:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - run: npm ci
+
+      - name: Send Pending CS report
+        env:
+          GITHUB_TOKEN: ${{ secrets.PENDING_CS_GITHUB_TOKEN }}
+          SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          SLACK_CS_CHANNEL: ${{ vars.SLACK_CS_CHANNEL || 'C09JYCQ2DLG' }}
+          PENDING_CS_OUTPUT: canvas
+          # The #boom-ninjas channel canvas, edited in place each morning.
+          PENDING_CS_CANVAS_ID: ${{ vars.PENDING_CS_CANVAS_ID || 'F0BHMFKN51B' }}
+          PENDING_CS_TZ: Asia/Jerusalem
+          PENDING_CS_ENFORCE_HOUR: '9'
+          # Manual runs post immediately; scheduled runs respect the hour guard.
+          PENDING_CS_FORCE: ${{ github.event_name == 'workflow_dispatch' }}
+        run: node scripts/send-pending-cs.js
