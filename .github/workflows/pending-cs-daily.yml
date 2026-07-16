@@ -36,6 +36,9 @@ jobs:
           PENDING_CS_OUTPUT: canvas
           # The #boom-ninjas channel canvas, edited in place each morning.
           PENDING_CS_CANVAS_ID: ${{ vars.PENDING_CS_CANVAS_ID || 'F0BHMFKN51B' }}
+          # Also drop an @channel preview card in the feed (via webhook).
+          PENDING_CS_POST_CARD: 'true'
+          PENDING_CS_NOTIFY: channel
           PENDING_CS_TZ: Asia/Jerusalem
           PENDING_CS_ENFORCE_HOUR: '9'
           # Manual runs post immediately; scheduled runs respect the hour guard.
