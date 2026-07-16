@@ -47,14 +47,22 @@ async function main() {
     (report.unassigned.count ? `, ${report.unassigned.count} unassigned.` : '.'))
 
   if (dryRun) {
-    const preview = cfg.output === 'canvas' ? cs.buildCanvasMarkdown(report, cfg) : cs.formatSlackMessage(report, cfg).text
-    console.log('\n--- DRY RUN (not posting) ---\n' + preview)
+    if (cfg.output === 'canvas') {
+      console.log('\n--- DRY RUN: CANVAS ---\n' + cs.buildCanvasMarkdown(report, cfg))
+      if (cfg.postCard) console.log('\n--- DRY RUN: CHANNEL CARD ---\n' + cs.buildPreviewCard(report, cfg).text)
+    } else {
+      console.log('\n--- DRY RUN (not posting) ---\n' + cs.formatSlackMessage(report, cfg).text)
+    }
     return
   }
 
   if (cfg.output === 'canvas') {
     const result = await cs.postCanvas(report, cfg)
     console.log(`[pending-cs] channel canvas ${result.created ? 'created' : 'updated'} (${result.canvasId}).`)
+    if (cfg.postCard) {
+      const card = await cs.postPreviewCard(report, cfg)
+      console.log(card ? `[pending-cs] posted preview card (notify: ${cfg.notify}).` : '[pending-cs] no webhook set — skipped preview card.')
+    }
     return
   }
 
